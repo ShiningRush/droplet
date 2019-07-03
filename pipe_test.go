@@ -13,11 +13,11 @@ type firstMiddleWare struct {
 	next MiddleWare
 }
 
-func(f *firstMiddleWare) SetNext(next MiddleWare) {
+func (f *firstMiddleWare) SetNext(next MiddleWare) {
 	f.next = next
 }
 
-func(f *firstMiddleWare) Handle(context Context) error {
+func (f *firstMiddleWare) Handle(context Context) error {
 	return f.next.Handle(context)
 }
 
@@ -25,11 +25,11 @@ type changeResultMiddleWare struct {
 	next MiddleWare
 }
 
-func(f *changeResultMiddleWare) SetNext(next MiddleWare) {
+func (f *changeResultMiddleWare) SetNext(next MiddleWare) {
 	f.next = next
 }
 
-func(f *changeResultMiddleWare) Handle(context Context) error {
+func (f *changeResultMiddleWare) Handle(context Context) error {
 	f.next.Handle(context)
 	context.SetOutput("not good")
 	return nil
@@ -37,10 +37,10 @@ func(f *changeResultMiddleWare) Handle(context Context) error {
 
 func TestChangeResultPipeWork(t *testing.T) {
 	input := "hello"
-	resp, err := NewPipe(&testInput{input}).
+	resp, err := NewPipe().
 		Add(&firstMiddleWare{}).
 		Add(&changeResultMiddleWare{}).
-		Run(func ()(interface{}, error){
+		Run(func(ctx Context) (interface{}, error) {
 			return input, nil
 		})
 
@@ -50,9 +50,9 @@ func TestChangeResultPipeWork(t *testing.T) {
 
 func TestPipeWork(t *testing.T) {
 	input := "hello"
-	resp, err := NewPipe(&testInput{input}).
+	resp, err := NewPipe().
 		Add(&firstMiddleWare{}).
-		Run(func ()(interface{}, error){
+		Run(func(ctx Context) (interface{}, error) {
 			return input, nil
 		})
 

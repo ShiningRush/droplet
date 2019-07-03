@@ -1,29 +1,27 @@
 package droplet
 
-type Handler func() (interface{}, error)
+type Handler func(ctx Context) (interface{}, error)
 
 type Pipe interface {
 	Add(mw MiddleWare) Pipe
 	Run(handler Handler) (interface{}, error)
 }
 
-type pipe struct {
+type BasePipe struct {
 	mws   []MiddleWare
 	input interface{}
 }
 
-func NewPipe(input interface{}) Pipe {
-	return &pipe{
-		input: input,
-	}
+func NewPipe() *BasePipe {
+	return &BasePipe{}
 }
 
-func (p *pipe) Add(mw MiddleWare) Pipe {
+func (p *BasePipe) Add(mw MiddleWare) Pipe {
 	p.mws = append(p.mws, mw)
 	return p
 }
 
-func (p *pipe) Run(handler Handler) (interface{}, error) {
+func (p *BasePipe) Run(handler Handler) (interface{}, error) {
 	initCtx := NewContext()
 	initCtx.input = p.input
 

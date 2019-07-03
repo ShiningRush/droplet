@@ -2,7 +2,7 @@ package droplet
 
 type MiddleWare interface {
 	SetNext(next MiddleWare)
-	Handle(context Context) error
+	Handle(ctx Context) error
 }
 
 type handlerMiddleWare struct {
@@ -14,9 +14,9 @@ func (m *handlerMiddleWare) SetNext(next MiddleWare) {
 	m.next = next
 }
 
-func (m *handlerMiddleWare) Handle(context Context) error {
-	rs, err := m.handler()
-	context.SetOutput(rs)
+func (m *handlerMiddleWare) Handle(ctx Context) error {
+	rs, err := m.handler(ctx)
+	ctx.SetOutput(rs)
 	return err
 }
 
