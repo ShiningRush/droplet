@@ -8,12 +8,16 @@ type Context interface {
 	Input() interface{}
 	SetOutput(interface{})
 	Output() interface{}
+	SetPath(path string)
+	Path() string
+
 }
 
 type emptyContext struct {
 	dict   map[string]interface{}
 	input  interface{}
 	output interface{}
+	path string
 }
 
 func NewContext() *emptyContext {
@@ -61,4 +65,12 @@ func (c *emptyContext) SetOutput(output interface{}) {
 
 func (c *emptyContext) Output() interface{} {
 	return c.output
+}
+
+func (c *emptyContext) SetPath(path string) {
+	c.path = path
+}
+
+func (c *emptyContext) Path() string {
+	return c.path
 }

@@ -21,6 +21,13 @@ func (p *BasePipe) Add(mw MiddleWare) Pipe {
 	return p
 }
 
+func (p *BasePipe) AddRange(mws []MiddleWare) Pipe {
+	for _, mw := range mws {
+		p.Add(mw)
+	}
+	return p
+}
+
 func (p *BasePipe) Run(handler Handler) (interface{}, error) {
 	initCtx := NewContext()
 	initCtx.input = p.input
