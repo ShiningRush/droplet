@@ -4,12 +4,12 @@ type Handler func(ctx Context) (interface{}, error)
 
 type Pipe interface {
 	Add(mw MiddleWare) Pipe
+	AddIf(mw MiddleWare, predicate bool) Pipe
 	Run(handler Handler) (interface{}, error)
 }
 
 type BasePipe struct {
 	mws   []MiddleWare
-	input interface{}
 }
 
 func NewPipe() *BasePipe {
@@ -18,6 +18,13 @@ func NewPipe() *BasePipe {
 
 func (p *BasePipe) Add(mw MiddleWare) Pipe {
 	p.mws = append(p.mws, mw)
+	return p
+}
+
+func (p *BasePipe) AddIf(mw MiddleWare,predicate bool) Pipe {
+	if predicate {
+		p.Add(mw)
+	}
 	return p
 }
 
@@ -30,7 +37,6 @@ func (p *BasePipe) AddRange(mws []MiddleWare) Pipe {
 
 func (p *BasePipe) Run(handler Handler) (interface{}, error) {
 	initCtx := NewContext()
-	initCtx.input = p.input
 
 	handlerMw := NewHandlerMiddleWare(handler)
 	for i, mw := range p.mws {

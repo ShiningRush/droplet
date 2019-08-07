@@ -35,6 +35,29 @@ func (f *changeResultMiddleWare) Handle(context Context) error {
 	return nil
 }
 
+func TestAddIf(t *testing.T) {
+	input := "hello"
+	resp, err := NewPipe().
+		Add(&firstMiddleWare{}).
+		AddIf(&changeResultMiddleWare{}, false).
+		Run(func(ctx Context) (interface{}, error) {
+			return input, nil
+		})
+
+	assert.NoError(t, err)
+	assert.Equal(t, "hello", resp)
+
+	resp, err = NewPipe().
+		Add(&firstMiddleWare{}).
+		AddIf(&changeResultMiddleWare{}, true).
+		Run(func(ctx Context) (interface{}, error) {
+			return input, nil
+		})
+
+	assert.NoError(t, err)
+	assert.Equal(t, "not good", resp)
+}
+
 func TestChangeResultPipeWork(t *testing.T) {
 	input := "hello"
 	resp, err := NewPipe().
@@ -44,8 +67,8 @@ func TestChangeResultPipeWork(t *testing.T) {
 			return input, nil
 		})
 
-	assert.NoError(t, err, "pipe should no error")
-	assert.Equal(t, "not good", resp, "resp should equal input")
+	assert.NoError(t, err)
+	assert.Equal(t, "not good", resp)
 }
 
 func TestPipeWork(t *testing.T) {
@@ -56,6 +79,6 @@ func TestPipeWork(t *testing.T) {
 			return input, nil
 		})
 
-	assert.NoError(t, err, "pipe should no error")
-	assert.Equal(t, input, resp, "resp should equal input")
+	assert.NoError(t, err)
+	assert.Equal(t, input, resp)
 }
