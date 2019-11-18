@@ -1,25 +1,25 @@
 package droplet
 
-type MiddleWare interface {
-	SetNext(next MiddleWare)
+type Middleware interface {
+	SetNext(next Middleware)
 	Handle(ctx Context) error
 }
 
-type handlerMiddleWare struct {
+type handlerMiddleware struct {
 	handler Handler
-	next    MiddleWare
+	next    Middleware
 }
 
-func (m *handlerMiddleWare) SetNext(next MiddleWare) {
+func (m *handlerMiddleware) SetNext(next Middleware) {
 	m.next = next
 }
 
-func (m *handlerMiddleWare) Handle(ctx Context) error {
+func (m *handlerMiddleware) Handle(ctx Context) error {
 	rs, err := m.handler(ctx)
 	ctx.SetOutput(rs)
 	return err
 }
 
-func NewHandlerMiddleWare(handler Handler) MiddleWare {
-	return &handlerMiddleWare{handler: handler}
+func NewHandlerMiddleware(handler Handler) Middleware {
+	return &handlerMiddleware{handler: handler}
 }

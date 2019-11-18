@@ -10,10 +10,10 @@ type testInput struct {
 }
 
 type firstMiddleWare struct {
-	next MiddleWare
+	next Middleware
 }
 
-func (f *firstMiddleWare) SetNext(next MiddleWare) {
+func (f *firstMiddleWare) SetNext(next Middleware) {
 	f.next = next
 }
 
@@ -22,10 +22,10 @@ func (f *firstMiddleWare) Handle(context Context) error {
 }
 
 type changeResultMiddleWare struct {
-	next MiddleWare
+	next Middleware
 }
 
-func (f *changeResultMiddleWare) SetNext(next MiddleWare) {
+func (f *changeResultMiddleWare) SetNext(next Middleware) {
 	f.next = next
 }
 

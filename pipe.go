@@ -3,32 +3,32 @@ package droplet
 type Handler func(ctx Context) (interface{}, error)
 
 type Pipe interface {
-	Add(mw MiddleWare) Pipe
-	AddIf(mw MiddleWare, predicate bool) Pipe
+	Add(mw Middleware) Pipe
+	AddIf(mw Middleware, predicate bool) Pipe
 	Run(handler Handler) (interface{}, error)
 }
 
 type BasePipe struct {
-	mws   []MiddleWare
+	mws   []Middleware
 }
 
 func NewPipe() *BasePipe {
 	return &BasePipe{}
 }
 
-func (p *BasePipe) Add(mw MiddleWare) Pipe {
+func (p *BasePipe) Add(mw Middleware) Pipe {
 	p.mws = append(p.mws, mw)
 	return p
 }
 
-func (p *BasePipe) AddIf(mw MiddleWare,predicate bool) Pipe {
+func (p *BasePipe) AddIf(mw Middleware,predicate bool) Pipe {
 	if predicate {
 		p.Add(mw)
 	}
 	return p
 }
 
-func (p *BasePipe) AddRange(mws []MiddleWare) Pipe {
+func (p *BasePipe) AddRange(mws []Middleware) Pipe {
 	for _, mw := range mws {
 		p.Add(mw)
 	}
@@ -38,7 +38,7 @@ func (p *BasePipe) AddRange(mws []MiddleWare) Pipe {
 func (p *BasePipe) Run(handler Handler) (interface{}, error) {
 	initCtx := NewContext()
 
-	handlerMw := NewHandlerMiddleWare(handler)
+	handlerMw := NewHandlerMiddleware(handler)
 	for i, mw := range p.mws {
 		if i < len(p.mws)-1 {
 			mw.SetNext(p.mws[i+1])
