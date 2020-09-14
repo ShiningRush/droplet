@@ -1,6 +1,10 @@
 package droplet
 
+import "context"
+
 type Context interface {
+	Context() context.Context
+	SetContext(context.Context)
 	Get(key string) interface{}
 	GetString(key string) string
 	Set(key string, value interface{})
@@ -10,10 +14,10 @@ type Context interface {
 	Output() interface{}
 	SetPath(path string)
 	Path() string
-
 }
 
 type emptyContext struct {
+	cxt context.Context
 	dict   map[string]interface{}
 	input  interface{}
 	output interface{}
@@ -23,7 +27,16 @@ type emptyContext struct {
 func NewContext() *emptyContext {
 	c := &emptyContext{}
 	c.dict = make(map[string]interface{})
+	c.cxt = context.TODO()
 	return c
+}
+
+func (c *emptyContext) Context() context.Context {
+	return c.cxt
+}
+
+func (c *emptyContext) SetContext(cxt context.Context)  {
+	c.cxt = cxt
 }
 
 func (c *emptyContext) Set(key string, value interface{}) {
