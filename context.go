@@ -17,11 +17,11 @@ type Context interface {
 }
 
 type emptyContext struct {
-	cxt context.Context
+	cxt    context.Context
 	dict   map[string]interface{}
 	input  interface{}
 	output interface{}
-	path string
+	path   string
 }
 
 func NewContext() *emptyContext {
@@ -35,7 +35,7 @@ func (c *emptyContext) Context() context.Context {
 	return c.cxt
 }
 
-func (c *emptyContext) SetContext(cxt context.Context)  {
+func (c *emptyContext) SetContext(cxt context.Context) {
 	c.cxt = cxt
 }
 

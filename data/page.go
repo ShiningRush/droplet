@@ -56,10 +56,10 @@ type SortPair struct {
 }
 
 type PageResult struct {
-	Rows          interface{} `json:"rows"`
+	Rows interface{} `json:"rows"`
 	// It is google web API, please refer https://cloud.google.com/apis/design/design_patterns#list_pagination
-	NextPageToken string      `json:"next_page_token"`
-	TotalSize     int         `json:"total_size" bson:"total_size"`
+	NextPageToken string `json:"next_page_token"`
+	TotalSize     int    `json:"total_size" bson:"total_size"`
 }
 
 func BuildNextPageToken(pager PagerInfo) (string, error) {

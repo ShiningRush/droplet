@@ -1,7 +1,6 @@
 package droplet
 
 type Middleware interface {
-	Priority() int
 	SetNext(next Middleware)
 	Handle(ctx Context) error
 }
@@ -9,10 +8,6 @@ type Middleware interface {
 type handlerMiddleware struct {
 	handler Handler
 	next    Middleware
-}
-
-func (m *handlerMiddleware) Priority() int {
-	return -1
 }
 
 func (m *handlerMiddleware) SetNext(next Middleware) {
