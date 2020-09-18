@@ -1,17 +1,20 @@
 package data
 
-import "fmt"
+import (
+	"fmt"
+)
 
 const (
-	ErrCodeInternal = 10001
-	ErrCodeFriendly = 10002
-	ErrCodeNotFound = 100
-	ErrCodeConflict = 101
+	ErrCodeInternal = 10000
+	ErrCodeNotFound = 10001
+	ErrCodeConflict = 10002
+	ErrCodeFriendly = 10003
+	ErrCodeValidate = 10004
 )
 
 var (
-	NotFoundError = &BaseError{Code: ErrCodeNotFound, Message: "data not found"}
-	ConflictError = &BaseError{Code: ErrCodeConflict, Message: "data is existed or has be updated"}
+	ErrNotFound = &BaseError{Code: ErrCodeNotFound, Message: "data not found"}
+	ErrConflict = &BaseError{Code: ErrCodeConflict, Message: "data is existed or has be updated"}
 )
 
 type BaseError struct {
@@ -48,7 +51,7 @@ type CallSrvError struct {
 
 func NewNotFoundError(msg string) error {
 	if msg == "" {
-		return NotFoundError
+		return ErrNotFound
 	}
 	return &BaseError{
 		Code:    100,
@@ -58,7 +61,7 @@ func NewNotFoundError(msg string) error {
 
 func NewConflictError(msg string) error {
 	if msg == "" {
-		return ConflictError
+		return ErrConflict
 	}
 	return &BaseError{
 		Code:    101,
@@ -81,4 +84,25 @@ func NewFriendlyError(msg string) error {
 		Code:    ErrCodeFriendly,
 		Message: msg,
 	}
+}
+
+type ValidateError struct {
+	BaseError
+}
+
+func NewValidateError(msg string, items []ValidateErrItem) error {
+	if msg == "" {
+		msg = "parameter validate failed"
+	}
+	return &BaseError{
+		Code:    ErrCodeValidate,
+		Message: msg,
+		Data:    items,
+	}
+}
+
+type ValidateErrItem struct {
+	ParamName string      `json:"paramName"`
+	Reason    string      `json:"reason"`
+	Detail    interface{} `json:"detail"`
 }
