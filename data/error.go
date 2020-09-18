@@ -17,6 +17,7 @@ var (
 type BaseError struct {
 	Code      int
 	Message   string
+	Data      interface{}
 	SourceSrv string
 }
 
