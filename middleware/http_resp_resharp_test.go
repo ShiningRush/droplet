@@ -6,6 +6,7 @@ import (
 	"github.com/shiningrush/droplet/data"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"net/http"
 	"testing"
 )
 
@@ -21,6 +22,32 @@ func TestHttpRespReshapeMiddleware_Handle(t *testing.T) {
 			wantResp: &data.Response{
 				Code:    data.ErrCodeInternal,
 				Message: "failed",
+			},
+		},
+		{
+			giveErr: fmt.Errorf("failed"),
+			giveResp: &data.Response{
+				Code:    http.StatusOK,
+				Message: "OK",
+			},
+			wantResp: &data.Response{
+				Code:    data.ErrCodeInternal,
+				Message: "failed",
+			},
+		},
+		{
+			giveErr: fmt.Errorf("failed"),
+			giveResp: &data.SpecCodeResponse{
+				Response: data.Response{
+					Code:    http.StatusOK,
+					Message: "OK",
+				},
+			},
+			wantResp: &data.SpecCodeResponse{
+				Response: data.Response{
+					Code:    data.ErrCodeInternal,
+					Message: "failed",
+				},
 			},
 		},
 		{

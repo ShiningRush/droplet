@@ -27,11 +27,16 @@ func (mw *HttpRespReshapeMiddleware) Handle(ctx droplet.Context) error {
 		default:
 			code, message = data.ErrCodeInternal, err.Error()
 		}
-		resp := droplet.Option.ResponseNewFunc()
+		var resp droplet.HttpResponse
+		if r, ok := ctx.Output().(droplet.HttpResponse); ok {
+			resp = r
+		} else {
+			resp = droplet.Option.ResponseNewFunc()
+		}
 		resp.Set(code, message, d)
 		resp.SetReqID(ctx.GetString(KeyRequestID))
 		ctx.SetOutput(resp)
-		// response reshape is the last step, so we don't need return it
+		// response reshape is the last step, so we don't need return error
 		return nil
 	}
 
