@@ -50,6 +50,9 @@ func TestTrafficLogMiddleware_Handle(t *testing.T) {
 		c.SetInput(tc.wantLog.Input)
 		c.SetOutput(tc.wantLog.Output)
 		testMw.opt.LogFunc = func(log *TrafficLog) {
+			assert.GreaterOrEqual(t, log.ElapsedTime, tc.wantLog.ElapsedTime)
+			log.ElapsedTime = 0
+			tc.wantLog.ElapsedTime = 0
 			assert.Equal(t, tc.wantLog, log)
 		}
 		err := testMw.Handle(c)

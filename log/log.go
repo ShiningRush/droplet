@@ -59,11 +59,9 @@ func Debugf(msg string, args ...interface{}) {
 }
 func Info(msg string, fields ...interface{}) {
 	DefLogger.Info(msg, fields...)
-
 }
 func Infof(msg string, args ...interface{}) {
 	DefLogger.Infof(msg, args...)
-
 }
 func Warn(msg string, fields ...interface{}) {
 	DefLogger.Warn(msg, fields...)
@@ -75,7 +73,7 @@ func Error(msg string, fields ...interface{}) {
 	DefLogger.Error(msg, fields...)
 }
 func Errorf(msg string, args ...interface{}) {
-	DefLogger.Debugf(msg, args...)
+	DefLogger.Errorf(msg, args...)
 }
 func Fatal(msg string, fields ...interface{}) {
 	DefLogger.Fatal(msg, fields...)

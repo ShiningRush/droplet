@@ -18,9 +18,15 @@ type GlobalOpt struct {
 }
 
 type HttpResponse interface {
-	Set(code int, msg, reqId string, data interface{})
+	Set(code int, msg string, data interface{})
+	SetReqID(reqId string)
 }
 
 type HttpFileResponse interface {
 	Get() (name, contentType string, content []byte)
+}
+
+type SpecCodeHttpResponse interface {
+	GetStatusCode() int
+	HttpResponse
 }

@@ -7,11 +7,23 @@ type Response struct {
 	RequestID string      `json:"request_id"`
 }
 
-func (r *Response) Set(code int, msg, reqId string, data interface{}) {
+func (r *Response) Set(code int, msg string, data interface{}) {
 	r.Code = code
 	r.Message = msg
-	r.RequestID = reqId
 	r.Data = data
+}
+
+func (r *Response) SetReqID(reqId string) {
+	r.RequestID = reqId
+}
+
+type SpecCodeResponse struct {
+	Response
+	StatusCode int `json:"-"`
+}
+
+func (r *SpecCodeResponse) GetStatusCode() int {
+	return r.StatusCode
 }
 
 type FileResponse struct {

@@ -51,6 +51,15 @@ func Wraps(handler droplet.Handler, opts ...wrapper.SetWrapOpt) func(*gin.Contex
 				log.Error("write response failed",
 					"err", err)
 			}
+		case droplet.SpecCodeHttpResponse:
+			resp := ret.(droplet.SpecCodeHttpResponse)
+			bs, err := json.Marshal(resp)
+			if err != nil {
+				log.Error("marshal result failed",
+					"err", err)
+				return
+			}
+			ctx.Data(resp.GetStatusCode(), "application/json", bs)
 		default:
 			bs, err := json.Marshal(ret)
 			if err != nil {

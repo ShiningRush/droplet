@@ -16,20 +16,6 @@ type SortInfo interface {
 	GetSortInfo() []*SortPair
 }
 
-type Pager struct {
-	PageSize   int    `json:"page_size" form:"page_size" auto_read:"page_size"`
-	PageNumber int    `json:"page_number" form:"page_number" auto_read:"page_number"`
-	PageToken  string `json:"page_token" form:"page_token" auto_read:"page_token"`
-}
-
-func (p *Pager) GetPageInfo() (pageSize, pageNumber int, pageToken string) {
-	return p.PageSize, p.PageNumber, p.PageToken
-}
-
-func (p *Pager) SetPageNumber(pageNumber int) {
-	p.PageNumber = pageNumber
-}
-
 type SortAble struct {
 	// format: "field[ desc], field2[ desc]"
 	OrderBy string `json:"order_by" form:"order_by" auto_read:"order_by"`
@@ -55,13 +41,7 @@ type SortPair struct {
 	IsDescending bool
 }
 
-type PageResult struct {
-	Rows interface{} `json:"rows"`
-	// It is google web API, please refer https://cloud.google.com/apis/design/design_patterns#list_pagination
-	NextPageToken string `json:"next_page_token"`
-	TotalSize     int    `json:"total_size" bson:"total_size"`
-}
-
+// It is google web API, please refer https://cloud.google.com/apis/design/design_patterns#list_pagination
 func BuildNextPageToken(pager PagerInfo) (string, error) {
 	_, pn, _ := pager.GetPageInfo()
 	pager.SetPageNumber(pn + 1)
