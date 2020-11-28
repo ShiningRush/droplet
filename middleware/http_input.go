@@ -63,20 +63,21 @@ func (mw *HttpInputMiddleware) Handle(ctx droplet.Context) error {
 
 	pInput := reflect.New(mw.opt.InputType).Interface()
 	if err := mw.injectFieldFromBody(pInput); err != nil {
-		return err
+		return data.NewInternalError(err.Error())
 	}
 
 	if err := mw.injectFieldFromUrlAndForm(pInput); err != nil {
-		return err
+		return data.NewInternalError(err.Error())
 	}
 
 	isRecovered, err := recoverPager(pInput)
 	if err != nil {
-		return err
+		return data.NewInternalError(err.Error())
 	}
 	if !isRecovered {
 		if err := vd.Struct(pInput); err != nil {
-			return fmt.Errorf("input validate failed: %w", err)
+			// TODO: parse err to items
+			return data.NewValidateError(fmt.Sprintf("input validate failed: %s", err), nil)
 		}
 	}
 
