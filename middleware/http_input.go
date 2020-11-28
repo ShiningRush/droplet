@@ -46,10 +46,6 @@ func NewHttpInputMiddleWare(opt HttpInputOption) *HttpInputMiddleware {
 	return &HttpInputMiddleware{opt: opt}
 }
 
-func (mw *HttpInputMiddleware) Priority() int {
-	return 1100
-}
-
 func (mw *HttpInputMiddleware) Handle(ctx droplet.Context) error {
 	mw.injectInfoToContext(ctx)
 	if mw.opt.InputType == nil {
@@ -63,16 +59,16 @@ func (mw *HttpInputMiddleware) Handle(ctx droplet.Context) error {
 
 	pInput := reflect.New(mw.opt.InputType).Interface()
 	if err := mw.injectFieldFromBody(pInput); err != nil {
-		return data.NewInternalError(err.Error())
+		return data.NewFormatError(err.Error())
 	}
 
 	if err := mw.injectFieldFromUrlAndForm(pInput); err != nil {
-		return data.NewInternalError(err.Error())
+		return data.NewFormatError(err.Error())
 	}
 
 	isRecovered, err := recoverPager(pInput)
 	if err != nil {
-		return data.NewInternalError(err.Error())
+		return data.NewFormatError(err.Error())
 	}
 	if !isRecovered {
 		if err := vd.Struct(pInput); err != nil {

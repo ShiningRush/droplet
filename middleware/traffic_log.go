@@ -23,10 +23,6 @@ type TrafficLog struct {
 	Error       error       `json:"error,omitempty"`
 }
 
-func (mw *TrafficLogMiddleware) Priority() int {
-	return 1300
-}
-
 type TrafficLogOpt struct {
 	IsLogReqAndResp bool
 	LogFunc         func(log *TrafficLog)

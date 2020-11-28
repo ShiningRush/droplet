@@ -10,6 +10,7 @@ const (
 	ErrCodeConflict = 10002
 	ErrCodeFriendly = 10003
 	ErrCodeValidate = 10004
+	ErrCodeFormat   = 10005
 )
 
 var (
@@ -82,6 +83,13 @@ func NewInternalError(msg string) error {
 func NewFriendlyError(msg string) error {
 	return &BaseError{
 		Code:    ErrCodeFriendly,
+		Message: msg,
+	}
+}
+
+func NewFormatError(msg string) error {
+	return &BaseError{
+		Code:    ErrCodeFormat,
 		Message: msg,
 	}
 }

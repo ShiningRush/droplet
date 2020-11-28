@@ -13,10 +13,6 @@ func NewRespReshapeMiddleware() *HttpRespReshapeMiddleware {
 	return &HttpRespReshapeMiddleware{}
 }
 
-func (mw *HttpRespReshapeMiddleware) Priority() int {
-	return 1000
-}
-
 func (mw *HttpRespReshapeMiddleware) Handle(ctx droplet.Context) error {
 	code, message := 0, ""
 	var d interface{}
