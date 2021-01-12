@@ -15,11 +15,6 @@ import (
 	"unicode"
 )
 
-const (
-	KeyHttpRequest = "HttpRequest"
-	KeyRequestID   = "RequestID"
-)
-
 // use a single instance of Validate, it caches struct info
 var vd *validator.Validate
 
@@ -28,7 +23,6 @@ func init() {
 }
 
 type HttpInputOption struct {
-	ReqFunc        func() *http.Request
 	PathParamsFunc func(key string) string
 	InputType      reflect.Type
 	IsReadFromBody bool
@@ -38,7 +32,7 @@ type HttpInputMiddleware struct {
 	BaseMiddleware
 	opt HttpInputOption
 
-	input         interface{}
+	req           *http.Request
 	multiPartData map[string][]byte
 }
 
@@ -47,12 +41,16 @@ func NewHttpInputMiddleWare(opt HttpInputOption) *HttpInputMiddleware {
 }
 
 func (mw *HttpInputMiddleware) Handle(ctx droplet.Context) error {
-	mw.injectInfoToContext(ctx)
+	httpReq := ctx.Get(KeyHttpRequest)
+	if httpReq == nil {
+		return fmt.Errorf("input middleware cannot get http request, please check if HttpInfoInjectorMiddleware middlle work well")
+	}
+	mw.req = httpReq.(*http.Request)
 	if mw.opt.InputType == nil {
 		return mw.BaseMiddleware.Handle(ctx)
 	}
 
-	switch mw.opt.ReqFunc().Method {
+	switch mw.req.Method {
 	case http.MethodPost, http.MethodPut, http.MethodPatch:
 		mw.opt.IsReadFromBody = true
 	}
@@ -82,11 +80,11 @@ func (mw *HttpInputMiddleware) Handle(ctx droplet.Context) error {
 }
 
 func (mw *HttpInputMiddleware) injectFieldFromBody(ptr interface{}) error {
-	if !mw.opt.IsReadFromBody || mw.opt.ReqFunc().ContentLength == 0 {
+	if !mw.opt.IsReadFromBody || mw.req.ContentLength == 0 {
 		return nil
 	}
 
-	contentType := mw.opt.ReqFunc().Header.Get("Content-Type")
+	contentType := mw.req.Header.Get("Content-Type")
 	switch {
 	case strings.HasPrefix(contentType, "multipart/form-data"):
 		return mw.readFromMultipartFormData()
@@ -100,12 +98,12 @@ func (mw *HttpInputMiddleware) injectFieldFromBody(ptr interface{}) error {
 }
 
 func (mw *HttpInputMiddleware) readJsonBody(ptr interface{}) error {
-	dc := json.NewDecoder(mw.opt.ReqFunc().Body)
+	dc := json.NewDecoder(mw.req.Body)
 	return dc.Decode(ptr)
 }
 
 func (mw *HttpInputMiddleware) readFromMultipartFormData() error {
-	reader, err := mw.opt.ReqFunc().MultipartReader()
+	reader, err := mw.req.MultipartReader()
 	if err != nil {
 		return fmt.Errorf("read form-data input from body failed: %s", err)
 	}
@@ -165,9 +163,9 @@ func (mw *HttpInputMiddleware) injectFieldFromUrlAndForm(ptr interface{}) error 
 		case "path":
 			val = mw.opt.PathParamsFunc(name)
 		case "header":
-			val = mw.opt.ReqFunc().Header.Get(name)
+			val = mw.req.Header.Get(name)
 		default:
-			val = mw.opt.ReqFunc().FormValue(name)
+			val = mw.req.FormValue(name)
 		}
 
 		tarVal, err := changeToFieldKind(val, input.Field(i).Kind())
@@ -178,12 +176,6 @@ func (mw *HttpInputMiddleware) injectFieldFromUrlAndForm(ptr interface{}) error 
 	}
 
 	return nil
-}
-
-func (mw *HttpInputMiddleware) injectInfoToContext(ctx droplet.Context) {
-	ctx.Set(KeyHttpRequest, mw.opt.ReqFunc())
-	ctx.Set(KeyRequestID, mw.opt.ReqFunc().Header.Get(droplet.Option.HeaderKeyRequestID))
-	ctx.SetPath(mw.opt.ReqFunc().URL.Path)
 }
 
 func recoverPager(pInput interface{}) (bool, error) {

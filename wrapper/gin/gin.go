@@ -23,11 +23,13 @@ func Wraps(handler droplet.Handler, opts ...wrapper.SetWrapOpt) func(*gin.Contex
 		dCtx.SetContext(ctx.Request.Context())
 
 		ret, _ := droplet.NewPipe().
-			Add(middleware.NewRespReshapeMiddleware()).
-			Add(middleware.NewHttpInputMiddleWare(middleware.HttpInputOption{
+			Add(middleware.NewHttpInfoInjectorMiddleware(middleware.HttpInfoInjectorOption{
 				ReqFunc: func() *http.Request {
 					return ctx.Request
 				},
+			})).
+			Add(middleware.NewRespReshapeMiddleware()).
+			Add(middleware.NewHttpInputMiddleWare(middleware.HttpInputOption{
 				PathParamsFunc: func(key string) string {
 					return ctx.Param(key)
 				},

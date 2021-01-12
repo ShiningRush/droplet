@@ -15,3 +15,8 @@ func (mw *BaseMiddleware) SetNext(next droplet.Middleware) {
 func (mw *BaseMiddleware) Handle(ctx droplet.Context) error {
 	return mw.next.Handle(ctx)
 }
+
+const (
+	KeyHttpRequest = "HttpRequest"
+	KeyRequestID   = "RequestID"
+)
