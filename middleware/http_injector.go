@@ -19,9 +19,11 @@ func NewHttpInfoInjectorMiddleware(opt HttpInfoInjectorOption) *HttpInfoInjector
 }
 
 func (mw *HttpInfoInjectorMiddleware) Handle(ctx droplet.Context) error {
-	ctx.Set(KeyHttpRequest, mw.opt.ReqFunc())
-	ctx.Set(KeyRequestID, mw.opt.ReqFunc().Header.Get(droplet.Option.HeaderKeyRequestID))
-	ctx.SetPath(mw.opt.ReqFunc().URL.Path)
+	req := mw.opt.ReqFunc()
+
+	ctx.Set(KeyHttpRequest, req)
+	ctx.Set(KeyRequestID, req.Header.Get(droplet.Option.HeaderKeyRequestID))
+	ctx.SetPath(req.URL.Path)
 
 	return mw.BaseMiddleware.Handle(ctx)
 }

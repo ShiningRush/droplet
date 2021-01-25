@@ -1,13 +1,11 @@
 package middleware
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/go-playground/validator/v10"
 	"github.com/shiningrush/droplet"
+	"github.com/shiningrush/droplet/codec"
 	"github.com/shiningrush/droplet/data"
-	"io"
-	"io/ioutil"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -32,8 +30,8 @@ type HttpInputMiddleware struct {
 	BaseMiddleware
 	opt HttpInputOption
 
-	req           *http.Request
-	multiPartData map[string][]byte
+	req       *http.Request
+	searchMap map[string][]byte
 }
 
 func NewHttpInputMiddleWare(opt HttpInputOption) *HttpInputMiddleware {
@@ -60,7 +58,7 @@ func (mw *HttpInputMiddleware) Handle(ctx droplet.Context) error {
 		return data.NewFormatError(err.Error())
 	}
 
-	if err := mw.injectFieldFromUrlAndForm(pInput); err != nil {
+	if err := mw.injectFieldFromUrlAndMap(pInput); err != nil {
 		return data.NewFormatError(err.Error())
 	}
 
@@ -85,60 +83,41 @@ func (mw *HttpInputMiddleware) injectFieldFromBody(ptr interface{}) error {
 	}
 
 	contentType := mw.req.Header.Get("Content-Type")
-	switch {
-	case strings.HasPrefix(contentType, "multipart/form-data"):
-		return mw.readFromMultipartFormData()
-	default: // application/json
-		if err := mw.readJsonBody(ptr); err != nil {
+	var coc codec.Interface
+	for _, c := range droplet.Option.Codec {
+		if strings.HasPrefix(contentType, c.ContentType()) {
+			coc = c
+		}
+	}
+
+	if coc == nil {
+		return fmt.Errorf("can not find matched codec: %s", contentType)
+	}
+
+	if dir, ok := coc.(codec.Direct); ok {
+		if err := dir.Unmarshal(mw.req, ptr); err != nil {
 			return err
 		}
 	}
 
+	if s, ok := coc.(codec.Search); ok {
+		m, err := s.UnmarshalSearchMap(mw.req)
+		if err != nil {
+			return err
+		}
+		mw.searchMap = m
+	}
+
 	return nil
 }
 
-func (mw *HttpInputMiddleware) readJsonBody(ptr interface{}) error {
-	dc := json.NewDecoder(mw.req.Body)
-	return dc.Decode(ptr)
-}
-
-func (mw *HttpInputMiddleware) readFromMultipartFormData() error {
-	reader, err := mw.req.MultipartReader()
-	if err != nil {
-		return fmt.Errorf("read form-data input from body failed: %s", err)
-	}
-
-	multiParts := map[string][]byte{}
-	for {
-		p, err := reader.NextPart()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return fmt.Errorf("read next part from body failed: %s", err)
-		}
-
-		bs, err := ioutil.ReadAll(p)
-		if err != nil {
-			return fmt.Errorf("read part body from body failed: %s", err)
-		}
-		if p.FileName() != "" {
-			multiParts[fmt.Sprintf("%s%s", "_", p.FormName())] = []byte(p.FileName())
-		}
-
-		multiParts[p.FormName()] = bs
-	}
-	mw.multiPartData = multiParts
-	return nil
-}
-
-func (mw *HttpInputMiddleware) injectFieldFromUrlAndForm(ptr interface{}) error {
+func (mw *HttpInputMiddleware) injectFieldFromUrlAndMap(ptr interface{}) error {
 	elType := reflect.TypeOf(ptr).Elem()
 	input := reflect.ValueOf(ptr).Elem()
 
 	for i := 0; i < elType.NumField(); i++ {
 		if input.Field(i).Kind() == reflect.Struct {
-			if err := mw.injectFieldFromUrlAndForm(input.Field(i).Addr().Interface()); err != nil {
+			if err := mw.injectFieldFromUrlAndMap(input.Field(i).Addr().Interface()); err != nil {
 				return err
 			}
 			continue
@@ -146,14 +125,21 @@ func (mw *HttpInputMiddleware) injectFieldFromUrlAndForm(ptr interface{}) error 
 
 		src, name := getSourceWayAndName(elType.Field(i))
 		if src == "" && mw.opt.IsReadFromBody {
-			if mw.multiPartData != nil {
-				if v, ok := mw.multiPartData[name]; ok {
+			if mw.searchMap != nil {
+				if v, ok := mw.searchMap[name]; ok {
 					if input.Field(i).Kind() == reflect.String {
 						input.Field(i).Set(reflect.ValueOf(string(v)))
 					} else if input.Field(i).Kind() == reflect.Slice {
 						input.Field(i).Set(reflect.ValueOf(v))
 					}
 				}
+			}
+			if name == "@body" {
+				bs, err := data.CopyBody(mw.req)
+				if err != nil {
+					return err
+				}
+				input.Field(i).Set(reflect.ValueOf(bs))
 			}
 			continue
 		}

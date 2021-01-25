@@ -1,12 +1,19 @@
 package droplet
 
-import "github.com/shiningrush/droplet/data"
+import (
+	"github.com/shiningrush/droplet/codec"
+	"github.com/shiningrush/droplet/data"
+)
 
 var (
 	Option = GlobalOpt{
 		HeaderKeyRequestID: "X-Request-ID",
 		ResponseNewFunc: func() HttpResponse {
 			return &data.Response{}
+		},
+		Codec: []codec.Interface{
+			&codec.Json{},
+			&codec.MultipartForm{},
 		},
 	}
 )
@@ -15,6 +22,7 @@ type GlobalOpt struct {
 	HeaderKeyRequestID string
 	ResponseNewFunc    func() HttpResponse
 	Orchestrator       Orchestrator
+	Codec              []codec.Interface
 }
 
 type HttpResponse interface {
