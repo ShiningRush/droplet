@@ -29,7 +29,7 @@ func InputType(p reflect.Type) SetWrapOpt {
 	}
 }
 
-func ReadFromBody(p reflect.Type) SetWrapOpt {
+func ReadFromBody() SetWrapOpt {
 	return func(base *WrapOptBase) {
 		base.IsReadFromBody = true
 	}
