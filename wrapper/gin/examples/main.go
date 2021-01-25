@@ -15,11 +15,11 @@ func main() {
 }
 
 type JsonInput struct {
-	ID string `auto_read:"id,path" json:"id"`
-	User string `auto_read:"user,header" json:"user"`
-	IPs []string `json:"ips"`
-	Count int `json:"count"`
-	Body []byte `auto_read:"@body"`
+	ID    string   `auto_read:"id,path" json:"id"`
+	User  string   `auto_read:"user,header" json:"user"`
+	IPs   []string `json:"ips"`
+	Count int      `json:"count"`
+	Body  []byte   `auto_read:"@body"`
 }
 
 func JsonInputDo(ctx droplet.Context) (interface{}, error) {
