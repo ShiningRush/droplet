@@ -12,8 +12,8 @@ import (
 type MultipartForm struct {
 }
 
-func (j *MultipartForm) ContentType() string {
-	return "multipart/form-data"
+func (j *MultipartForm) ContentType() []string {
+	return []string{"multipart/form-data"}
 }
 
 func (j *MultipartForm) UnmarshalSearchMap(req *http.Request, ptr interface{}) (SearchMap, error) {
