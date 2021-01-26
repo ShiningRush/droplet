@@ -83,10 +83,6 @@ func (mw *HttpInputMiddleware) injectFieldFromBody(ptr interface{}) error {
 	}
 
 	contentType := mw.req.Header.Get("Content-Type")
-	if contentType == "" {
-		contentType = "application/json"
-	}
-
 	var coc codec.Interface
 	for _, c := range droplet.Option.Codec {
 		if strings.HasPrefix(contentType, c.ContentType()) {
@@ -95,7 +91,7 @@ func (mw *HttpInputMiddleware) injectFieldFromBody(ptr interface{}) error {
 	}
 
 	if coc == nil {
-		return fmt.Errorf("can not find matched codec: %s", contentType)
+		coc = &codec.Json{}
 	}
 
 	if dir, ok := coc.(codec.Direct); ok {
