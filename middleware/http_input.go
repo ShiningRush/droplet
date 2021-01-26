@@ -83,15 +83,11 @@ func (mw *HttpInputMiddleware) injectFieldFromBody(ptr interface{}) error {
 	}
 
 	contentType := mw.req.Header.Get("Content-Type")
-	var coc codec.Interface
+	var coc codec.Interface = &codec.Json{}
 	for _, c := range droplet.Option.Codec {
 		if strings.HasPrefix(contentType, c.ContentType()) {
 			coc = c
 		}
-	}
-
-	if coc == nil {
-		coc = &codec.Json{}
 	}
 
 	if dir, ok := coc.(codec.Direct); ok {
