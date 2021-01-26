@@ -3,7 +3,7 @@ package codec
 import "net/http"
 
 type Interface interface {
-	ContentType() string
+	ContentType() []string
 	Marshal(interface{}) ([]byte, error)
 }
 

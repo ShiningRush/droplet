@@ -14,6 +14,7 @@ var (
 		Codec: []codec.Interface{
 			&codec.Json{},
 			&codec.MultipartForm{},
+			&codec.Text{},
 		},
 	}
 )

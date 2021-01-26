@@ -85,8 +85,10 @@ func (mw *HttpInputMiddleware) injectFieldFromBody(ptr interface{}) error {
 	contentType := mw.req.Header.Get("Content-Type")
 	var coc codec.Interface = &codec.Json{}
 	for _, c := range droplet.Option.Codec {
-		if strings.HasPrefix(contentType, c.ContentType()) {
-			coc = c
+		for _, ctt := range c.ContentType() {
+			if strings.HasPrefix(contentType, ctt) {
+				coc = c
+			}
 		}
 	}
 

@@ -2,15 +2,16 @@ package codec
 
 import (
 	"encoding/json"
-	"github.com/shiningrush/droplet/data"
 	"net/http"
+
+	"github.com/shiningrush/droplet/data"
 )
 
 type Json struct {
 }
 
-func (j *Json) ContentType() string {
-	return "application/json"
+func (j *Json) ContentType() []string {
+	return []string{"application/json"}
 }
 
 func (j *Json) Unmarshal(req *http.Request, ptr interface{}) error {
