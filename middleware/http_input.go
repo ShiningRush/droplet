@@ -152,9 +152,12 @@ func (mw *HttpInputMiddleware) injectFieldFromUrlAndMap(ptr interface{}) error {
 			val = mw.req.FormValue(name)
 		}
 
-		tarVal, err := changeToFieldKind(val, input.Field(i).Kind())
+		tarVal, err := changeToFieldKind(val, input.Field(i).Type())
 		if err != nil {
 			return err
+		}
+		if tarVal == nil {
+			return nil
 		}
 		input.Field(i).Set(reflect.ValueOf(tarVal))
 	}
@@ -193,8 +196,21 @@ func lowerFirst(str string) string {
 	return ""
 }
 
-func changeToFieldKind(str string, kind reflect.Kind) (interface{}, error) {
+func changeToFieldKind(str string, t reflect.Type) (interface{}, error) {
+	kind := t.Kind()
+	isPtr := false
+	if kind == reflect.Ptr {
+		if str == "" {
+			return nil, nil
+		}
+		isPtr = true
+		kind = t.Elem().Kind()
+	}
+
 	if kind == reflect.String {
+		if isPtr {
+			return &str, nil
+		}
 		return str, nil
 	}
 
@@ -206,7 +222,9 @@ func changeToFieldKind(str string, kind reflect.Kind) (interface{}, error) {
 		if err != nil {
 			return nil, fmt.Errorf("changeToFieldKind covert to bool failed: %s", err)
 		}
-
+		if isPtr {
+			return &b, nil
+		}
 		return b, nil
 	}
 
@@ -218,7 +236,12 @@ func changeToFieldKind(str string, kind reflect.Kind) (interface{}, error) {
 		if err != nil {
 			return nil, fmt.Errorf("changeToFieldKind covert to int failed: %s", err)
 		}
-		return int(i), nil
+
+		i32 := int(i)
+		if isPtr {
+			return &i32, nil
+		}
+		return i32, nil
 	}
 
 	if kind == reflect.Uint {
@@ -229,7 +252,12 @@ func changeToFieldKind(str string, kind reflect.Kind) (interface{}, error) {
 		if err != nil {
 			return nil, fmt.Errorf("changeToFieldKind covert to uint failed: %s", err)
 		}
-		return uint(i), nil
+
+		ui := uint(i)
+		if isPtr {
+			return &ui, nil
+		}
+		return ui, nil
 	}
 
 	if kind == reflect.Int64 {
@@ -239,6 +267,10 @@ func changeToFieldKind(str string, kind reflect.Kind) (interface{}, error) {
 		i, err := strconv.ParseInt(str, 10, 64)
 		if err != nil {
 			return nil, fmt.Errorf("changeToFieldKind covert to int64 failed: %s", err)
+		}
+
+		if isPtr {
+			return &i, nil
 		}
 		return i, nil
 	}
@@ -251,8 +283,12 @@ func changeToFieldKind(str string, kind reflect.Kind) (interface{}, error) {
 		if err != nil {
 			return nil, fmt.Errorf("changeToFieldKind covert to uint64 failed: %s", err)
 		}
+
+		if isPtr {
+			return &i, nil
+		}
 		return i, nil
 	}
 
-	return nil, nil
+	return nil, fmt.Errorf("unsupport type: %s", kind.String())
 }
