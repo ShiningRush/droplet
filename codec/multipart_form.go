@@ -16,7 +16,7 @@ func (j *MultipartForm) ContentType() []string {
 	return []string{"multipart/form-data"}
 }
 
-func (j *MultipartForm) UnmarshalSearchMap(req *http.Request, ptr interface{}) (SearchMap, error) {
+func (j *MultipartForm) UnmarshalSearchMap(req *http.Request) (SearchMap, error) {
 	// make request body could read multiple
 	bs, err := data.CopyBody(req)
 	if err != nil {
