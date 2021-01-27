@@ -122,7 +122,7 @@ func (mw *HttpInputMiddleware) injectFieldFromUrlAndMap(ptr interface{}) error {
 		}
 
 		src, name := getSourceWayAndName(elType.Field(i))
-		if src == "" && mw.opt.IsReadFromBody {
+		if mw.opt.IsReadFromBody {
 			if mw.searchMap != nil {
 				if v, ok := mw.searchMap[name]; ok {
 					if input.Field(i).Kind() == reflect.String {
@@ -156,7 +156,9 @@ func (mw *HttpInputMiddleware) injectFieldFromUrlAndMap(ptr interface{}) error {
 		if err != nil {
 			return err
 		}
-		input.Field(i).Set(reflect.ValueOf(tarVal))
+		if input.Field(i).IsZero() {
+			input.Field(i).Set(reflect.ValueOf(tarVal))
+		}
 	}
 
 	return nil
