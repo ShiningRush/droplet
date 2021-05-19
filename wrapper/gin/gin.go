@@ -12,6 +12,8 @@ import (
 	"net/http"
 )
 
+var GinContextKey = "gin_ctx"
+
 func Wraps(handler droplet.Handler, opts ...wrapper.SetWrapOpt) func(*gin.Context) {
 	return func(ctx *gin.Context) {
 		opt := &wrapper.WrapOptBase{}
@@ -21,6 +23,7 @@ func Wraps(handler droplet.Handler, opts ...wrapper.SetWrapOpt) func(*gin.Contex
 
 		dCtx := droplet.NewContext()
 		dCtx.SetContext(ctx.Request.Context())
+		dCtx.Set(GinContextKey, ctx)
 
 		ret, _ := droplet.NewPipe().
 			Add(middleware.NewHttpInfoInjectorMiddleware(middleware.HttpInfoInjectorOption{
