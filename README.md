@@ -4,7 +4,7 @@ Decouple the service access layer so that the business only cares about input an
 
 ## Background
 
-When you write a http web server, you see above code everywhere.
+When you write a http web server, you will see code like below everywhere.
 Such as gin:
 ```go
 func consumerCreate(c *gin.Context) {
@@ -64,6 +64,9 @@ Droplet is not only that, please keep reading to find more.
 Droplet is designed to work between the service access layer and the application layer,
 and is an intermediate layer framework. It provides a pipeline mechanism based on the reified Struct,
 and provides a lot of convenient middleware based on this.
+
+
+
 
 ## Intall
 
