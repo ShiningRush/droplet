@@ -1,7 +1,6 @@
 package gorestful
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/emicklei/go-restful/v3"
 	"github.com/shiningrush/droplet"
@@ -55,25 +54,13 @@ func Wraps(handler droplet.Handler, opts ...wrapper.SetWrapOpt) func(*restful.Re
 			}
 		case droplet.SpecCodeHttpResponse:
 			resp := ret.(droplet.SpecCodeHttpResponse)
-			bs, err := json.Marshal(resp)
-			if err != nil {
-				log.Error("marshal result failed",
-					"err", err)
-				return
-			}
-			if err := response.WriteHeaderAndJson(resp.GetStatusCode(), bs, "application/json"); err != nil {
+			if err := response.WriteHeaderAndJson(resp.GetStatusCode(), resp, "application/json"); err != nil {
 				log.Error("write resp failed",
 					"err", err,
 					"path", request.Request.URL.Path)
 			}
 		default:
-			bs, err := json.Marshal(ret)
-			if err != nil {
-				log.Error("marshal result failed",
-					"err", err)
-				return
-			}
-			if err := response.WriteHeaderAndJson(http.StatusOK, bs, "application/json"); err != nil {
+			if err := response.WriteHeaderAndJson(http.StatusOK, ret, "application/json"); err != nil {
 				log.Error("write resp failed",
 					"err", err,
 					"path", request.Request.URL.Path)
