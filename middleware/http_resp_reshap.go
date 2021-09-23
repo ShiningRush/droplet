@@ -37,7 +37,7 @@ func (mw *HttpRespReshapeMiddleware) Handle(ctx droplet.Context) error {
 	}
 
 	switch ctx.Output().(type) {
-	case droplet.HttpFileResponse:
+	case droplet.RawHttpResponse, droplet.HttpFileResponse:
 	case droplet.HttpResponse:
 		resp := ctx.Output().(droplet.HttpResponse)
 		resp.SetReqID(ctx.GetString(KeyRequestID))

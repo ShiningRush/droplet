@@ -3,6 +3,7 @@ package droplet
 import (
 	"github.com/shiningrush/droplet/codec"
 	"github.com/shiningrush/droplet/data"
+	"net/http"
 )
 
 var (
@@ -38,4 +39,8 @@ type HttpFileResponse interface {
 type SpecCodeHttpResponse interface {
 	GetStatusCode() int
 	HttpResponse
+}
+
+type RawHttpResponse interface {
+	WriteRawResponse(http.ResponseWriter) error
 }

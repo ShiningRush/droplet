@@ -1,6 +1,8 @@
 package droplet
 
-import "context"
+import (
+	"context"
+)
 
 type Context interface {
 	Context() context.Context

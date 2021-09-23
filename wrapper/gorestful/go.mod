@@ -7,3 +7,5 @@ require (
 	github.com/json-iterator/go v1.1.10 // indirect
 	github.com/shiningrush/droplet v0.2.4
 )
+
+replace github.com/shiningrush/droplet => ../../
