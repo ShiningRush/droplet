@@ -10,7 +10,7 @@ func Wraps(handler droplet.Handler, opts ...wrapper.SetWrapOpt) func(*gin.Contex
 	return func(ctx *gin.Context) {
 		wrapper.HandleHttpInPipeline(wrapper.HandleHttpInPipelineInput{
 			Req:            ctx.Request,
-			RespWriter:     ctx.Writer,
+			RespWriter:     wrapper.NewResponseWriter(ctx.Writer),
 			PathParamsFunc: ctx.Param,
 			Handler:        handler,
 			Opts:           opts,

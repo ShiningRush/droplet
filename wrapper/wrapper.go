@@ -3,15 +3,16 @@ package wrapper
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+
 	"github.com/shiningrush/droplet"
 	"github.com/shiningrush/droplet/log"
 	"github.com/shiningrush/droplet/middleware"
-	"net/http"
 )
 
 type HandleHttpInPipelineInput struct {
 	Req            *http.Request
-	RespWriter     http.ResponseWriter
+	RespWriter     droplet.ResponseWriter
 	PathParamsFunc func(key string) string
 	Handler        droplet.Handler
 	Opts           []SetWrapOpt
@@ -54,8 +55,8 @@ func HandleHttpInPipeline(input HandleHttpInPipelineInput) {
 		if contentType == "" {
 			contentType = "application/octet-stream"
 		}
-		input.RespWriter.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", name))
-		input.RespWriter.Header().Set("Content-type", contentType)
+		input.RespWriter.SetHeader("Content-Disposition", fmt.Sprintf("attachment; filename=%s", name))
+		input.RespWriter.SetHeader("Content-type", contentType)
 		_, err := input.RespWriter.Write(content)
 		if err != nil {
 			logWriteErrors(input.Req, err)
@@ -78,12 +79,12 @@ func logWriteErrors(req *http.Request, err error) {
 		"url", req.URL.String())
 }
 
-func writeJsonToResp(rw http.ResponseWriter, code int, data interface{}) error {
+func writeJsonToResp(rw droplet.ResponseWriter, code int, data interface{}) error {
 	bs, err := json.Marshal(data)
 	if err != nil {
 		return fmt.Errorf("json marshal failed: %w", err)
 	}
-	rw.Header().Set("Content-Type", "application/json")
+	rw.SetHeader("Content-Type", "application/json")
 
 	rw.WriteHeader(code)
 	if _, err := rw.Write(bs); err != nil {
