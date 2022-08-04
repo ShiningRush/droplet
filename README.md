@@ -1,6 +1,5 @@
 # droplet
 [![Go Report Card](https://goreportcard.com/badge/github.com/shiningrush/droplet)](https://goreportcard.com/report/github.com/shiningrush/droplet)
-[![codecov](https://codecov.io/gh/ShiningRush/droplet/branch/master/graph/badge.svg?token=YL8PzEOyD7)](https://codecov.io/gh/ShiningRush/droplet)
 
 Decouple the service access layer so that the business only cares about input and output.
 

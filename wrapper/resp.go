@@ -2,6 +2,7 @@ package wrapper
 
 import "net/http"
 
+// NewResponseWriter wrap a http.ResponseWriter to ResponseWriter
 func NewResponseWriter(w http.ResponseWriter) *StdWriterWrapper {
 	return &StdWriterWrapper{stdWriter: w}
 }
