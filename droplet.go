@@ -1,9 +1,10 @@
 package droplet
 
 import (
+	"net/http"
+
 	"github.com/shiningrush/droplet/codec"
 	"github.com/shiningrush/droplet/data"
-	"net/http"
 )
 
 var (
@@ -41,6 +42,20 @@ type SpecCodeHttpResponse interface {
 	HttpResponse
 }
 
+type ResponseWriter interface {
+	SetHeader(key, val string)
+	GetHeader(key string) string
+	GetHeaderValues(key string) []string
+	DelHeader(key string)
+
+	Write([]byte) (int, error)
+	WriteHeader(statusCode int)
+
+	// StdHttpWriter return the http.ResponseWriter, if wrapped framework is not compatible(such as fasthttp)
+	// it will return nil
+	StdHttpWriter() http.ResponseWriter
+}
+
 type RawHttpResponse interface {
-	WriteRawResponse(http.ResponseWriter) error
+	WriteRawResponse(writer ResponseWriter) error
 }
