@@ -128,32 +128,32 @@ func Fatalf(msg string, args ...interface{}) {
 }
 
 func CtxDebug(ctx context.Context, msg string, fields ...interface{}) {
-	DefLogger.Debug(msg, fields...)
+	DefLogger.CtxDebug(ctx, msg, fields...)
 }
 func CtxDebugf(ctx context.Context, msg string, args ...interface{}) {
-	DefLogger.Debugf(msg, args...)
+	DefLogger.CtxDebugf(ctx, msg, args...)
 }
 func CtxInfo(ctx context.Context, msg string, fields ...interface{}) {
-	DefLogger.Info(msg, fields...)
+	DefLogger.CtxInfo(ctx, msg, fields...)
 }
 func CtxInfof(ctx context.Context, msg string, args ...interface{}) {
-	DefLogger.Infof(msg, args...)
+	DefLogger.CtxInfof(ctx, msg, args...)
 }
 func CtxWarn(ctx context.Context, msg string, fields ...interface{}) {
-	DefLogger.Warn(msg, fields...)
+	DefLogger.CtxWarn(ctx, msg, fields...)
 }
 func CtxWarnf(ctx context.Context, msg string, args ...interface{}) {
-	DefLogger.Warnf(msg, args...)
+	DefLogger.CtxWarnf(ctx, msg, args...)
 }
 func CtxError(ctx context.Context, msg string, fields ...interface{}) {
-	DefLogger.Error(msg, fields...)
+	DefLogger.CtxError(ctx, msg, fields...)
 }
 func CtxErrorf(ctx context.Context, msg string, args ...interface{}) {
-	DefLogger.Errorf(msg, args...)
+	DefLogger.CtxErrorf(ctx, msg, args...)
 }
 func CtxFatal(ctx context.Context, msg string, fields ...interface{}) {
-	DefLogger.Fatal(msg, fields...)
+	DefLogger.CtxFatal(ctx, msg, fields...)
 }
 func CtxFatalf(ctx context.Context, msg string, args ...interface{}) {
-	DefLogger.Fatalf(msg, args...)
+	DefLogger.CtxFatalf(ctx, msg, args...)
 }
