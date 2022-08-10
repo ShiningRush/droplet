@@ -56,7 +56,7 @@ func (e *emptyLog) Fatal(msg string, fields ...interface{}) {
 
 }
 
-func (e emptyLog) Fatalf(msg string, args ...interface{}) {
+func (e *emptyLog) Fatalf(msg string, args ...interface{}) {
 }
 
 func Debug(msg string, fields ...interface{}) {
