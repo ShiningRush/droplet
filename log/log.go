@@ -1,11 +1,14 @@
 package log
 
+import "context"
+
 var (
-	DefLogger Interface = emptyLog{}
+	DefLogger Interface = &emptyLog{}
 )
 
 // Interface is structured log interface
 type Interface interface {
+	WithContext(ctx context.Context) Interface
 	Debug(msg string, fields ...interface{})
 	Debugf(msg string, args ...interface{})
 	Info(msg string, fields ...interface{})
@@ -21,31 +24,36 @@ type Interface interface {
 type emptyLog struct {
 }
 
-func (e emptyLog) Debug(msg string, fields ...interface{}) {
+func (e *emptyLog) WithContext(ctx context.Context) Interface {
+	return e
 }
 
-func (e emptyLog) Debugf(msg string, args ...interface{}) {
+func (e *emptyLog) Debug(msg string, fields ...interface{}) {
 }
 
-func (e emptyLog) Info(msg string, fields ...interface{}) {
+func (e *emptyLog) Debugf(msg string, args ...interface{}) {
 }
 
-func (e emptyLog) Infof(msg string, args ...interface{}) {
+func (e *emptyLog) Info(msg string, fields ...interface{}) {
 }
 
-func (e emptyLog) Warn(msg string, fields ...interface{}) {
+func (e *emptyLog) Infof(msg string, args ...interface{}) {
 }
 
-func (e emptyLog) Warnf(msg string, args ...interface{}) {
+func (e *emptyLog) Warn(msg string, fields ...interface{}) {
 }
 
-func (e emptyLog) Error(msg string, fields ...interface{}) {
+func (e *emptyLog) Warnf(msg string, args ...interface{}) {
 }
 
-func (e emptyLog) Errorf(msg string, args ...interface{}) {
+func (e *emptyLog) Error(msg string, fields ...interface{}) {
 }
 
-func (e emptyLog) Fatal(msg string, fields ...interface{}) {
+func (e *emptyLog) Errorf(msg string, args ...interface{}) {
+}
+
+func (e *emptyLog) Fatal(msg string, fields ...interface{}) {
+
 }
 
 func (e emptyLog) Fatalf(msg string, args ...interface{}) {
