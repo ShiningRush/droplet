@@ -2,23 +2,20 @@ package middleware
 
 import (
 	"fmt"
-	"github.com/go-playground/validator/v10"
-	"github.com/shiningrush/droplet"
-	"github.com/shiningrush/droplet/codec"
-	"github.com/shiningrush/droplet/data"
 	"net/http"
 	"reflect"
 	"strconv"
 	"strings"
 	"unicode"
+
+	"github.com/go-playground/validator/v10"
+	"github.com/shiningrush/droplet"
+	"github.com/shiningrush/droplet/codec"
+	"github.com/shiningrush/droplet/data"
 )
 
-// use a single instance of Validate, it caches struct info
-var vd *validator.Validate
-
-func init() {
-	vd = validator.New()
-}
+// DefaultValidator use a single instance of Validate, it caches struct info
+var DefaultValidator = validator.New()
 
 type HttpInputOption struct {
 	PathParamsFunc func(key string) string
@@ -67,7 +64,7 @@ func (mw *HttpInputMiddleware) Handle(ctx droplet.Context) error {
 		return data.NewFormatError(err.Error())
 	}
 	if !isRecovered {
-		if err := vd.Struct(pInput); err != nil {
+		if err := DefaultValidator.Struct(pInput); err != nil {
 			// TODO: parse err to items
 			return data.NewValidateError(fmt.Sprintf("input validate failed: %s", err), nil)
 		}
