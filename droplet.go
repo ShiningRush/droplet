@@ -34,7 +34,7 @@ type HttpResponse interface {
 }
 
 type HttpFileResponse interface {
-	Get() (name, contentType string, content []byte)
+	Get() *data.FileResponse
 }
 
 type SpecCodeHttpResponse interface {

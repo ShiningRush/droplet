@@ -2,6 +2,7 @@ package data
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 )
 
@@ -32,13 +33,14 @@ func (r *SpecCodeResponse) GetStatusCode() int {
 }
 
 type FileResponse struct {
-	Name        string
-	ContentType string
-	Content     []byte
+	Name          string
+	ContentType   string
+	Content       []byte
+	ContentReader io.ReadCloser
 }
 
-func (r *FileResponse) Get() (name, contentType string, content []byte) {
-	return r.Name, r.ContentType, r.Content
+func (r *FileResponse) Get() *FileResponse {
+	return r
 }
 
 type RawResponse struct {
