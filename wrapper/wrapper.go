@@ -3,6 +3,7 @@ package wrapper
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/shiningrush/droplet"
@@ -51,15 +52,23 @@ func HandleHttpInPipeline(input HandleHttpInPipelineInput) {
 		}
 	case droplet.HttpFileResponse:
 		fr := ret.(droplet.HttpFileResponse)
-		name, contentType, content := fr.Get()
-		if contentType == "" {
-			contentType = "application/octet-stream"
+		fileResp := fr.Get()
+		if fileResp.ContentType == "" {
+			fileResp.ContentType = "application/octet-stream"
 		}
-		input.RespWriter.SetHeader("Content-Disposition", fmt.Sprintf("attachment; filename=%s", name))
-		input.RespWriter.SetHeader("Content-type", contentType)
-		_, err := input.RespWriter.Write(content)
-		if err != nil {
-			logWriteErrors(input.Req, err)
+		input.RespWriter.SetHeader("Content-Disposition", fmt.Sprintf("attachment; filename=%s", fileResp.Name))
+		input.RespWriter.SetHeader("Content-type", fileResp.ContentType)
+		if fileResp.ContentReader != nil {
+			defer fileResp.ContentReader.Close()
+			_, err := io.Copy(input.RespWriter, fileResp.ContentReader)
+			if err != nil {
+				logWriteErrors(input.Req, err)
+			}
+		} else {
+			_, err := input.RespWriter.Write(fileResp.Content)
+			if err != nil {
+				logWriteErrors(input.Req, err)
+			}
 		}
 	case droplet.SpecCodeHttpResponse:
 		resp := ret.(droplet.SpecCodeHttpResponse)
