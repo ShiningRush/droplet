@@ -44,6 +44,10 @@ func HandleHttpInPipeline(input HandleHttpInPipelineInput) {
 		SetOrchestrator(opt.Orchestrator).
 		Run(input.Handler, droplet.InitContext(dCtx))
 
+	for k, _ := range dCtx.ResponseHeader() {
+		input.RespWriter.SetHeader(k, dCtx.ResponseHeader().Get(k))
+	}
+
 	switch ret.(type) {
 	case droplet.RawHttpResponse:
 		rr := ret.(droplet.RawHttpResponse)
@@ -55,6 +59,9 @@ func HandleHttpInPipeline(input HandleHttpInPipelineInput) {
 		fileResp := fr.Get()
 		if fileResp.ContentType == "" {
 			fileResp.ContentType = "application/octet-stream"
+		}
+		if fileResp.StatusCode > 0 {
+			input.RespWriter.WriteHeader(fileResp.StatusCode)
 		}
 		input.RespWriter.SetHeader("Content-Disposition", fmt.Sprintf("attachment; filename=%s", fileResp.Name))
 		input.RespWriter.SetHeader("Content-type", fileResp.ContentType)
