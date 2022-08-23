@@ -37,6 +37,7 @@ type FileResponse struct {
 	ContentType   string
 	Content       []byte
 	ContentReader io.ReadCloser
+	StatusCode    int
 }
 
 func (r *FileResponse) Get() *FileResponse {

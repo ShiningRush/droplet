@@ -60,6 +60,9 @@ func HandleHttpInPipeline(input HandleHttpInPipelineInput) {
 		if fileResp.ContentType == "" {
 			fileResp.ContentType = "application/octet-stream"
 		}
+		if fileResp.StatusCode > 0 {
+			input.RespWriter.WriteHeader(fileResp.StatusCode)
+		}
 		input.RespWriter.SetHeader("Content-Disposition", fmt.Sprintf("attachment; filename=%s", fileResp.Name))
 		input.RespWriter.SetHeader("Content-type", fileResp.ContentType)
 		if fileResp.ContentReader != nil {
