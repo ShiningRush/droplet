@@ -1,18 +1,20 @@
 package wrapper
 
 import (
+	"reflect"
+
 	"github.com/shiningrush/droplet"
 	"github.com/shiningrush/droplet/middleware"
-	"reflect"
 )
 
 type WrapOptBase struct {
-	InputType      reflect.Type
-	IsReadFromBody bool
+	inputType            reflect.Type
+	isReadFromBody       bool
+	disableUnmarshalBody bool
 
-	TrafficLogOpt middleware.TrafficLogOpt
+	trafficLogOpt middleware.TrafficLogOpt
 
-	Orchestrator droplet.Orchestrator
+	orchestrator droplet.Orchestrator
 }
 
 type SetWrapOpt func(base *WrapOptBase)
@@ -25,30 +27,36 @@ func InputType(p reflect.Type) SetWrapOpt {
 		if p.Kind() != reflect.Struct {
 			panic("input type must be struct or struct ptr")
 		}
-		base.InputType = p
+		base.inputType = p
 	}
 }
 
 func ReadFromBody() SetWrapOpt {
 	return func(base *WrapOptBase) {
-		base.IsReadFromBody = true
+		base.isReadFromBody = true
 	}
 }
 
 func LogReqAndResp() SetWrapOpt {
 	return func(base *WrapOptBase) {
-		base.TrafficLogOpt.IsLogReqAndResp = true
+		base.trafficLogOpt.IsLogReqAndResp = true
 	}
 }
 
 func LogFunc(logFunc func(log *middleware.TrafficLog)) SetWrapOpt {
 	return func(base *WrapOptBase) {
-		base.TrafficLogOpt.LogFunc = logFunc
+		base.trafficLogOpt.LogFunc = logFunc
 	}
 }
 
 func Orchestrator(o droplet.Orchestrator) SetWrapOpt {
 	return func(base *WrapOptBase) {
-		base.Orchestrator = o
+		base.orchestrator = o
+	}
+}
+
+func DisableUnmarshalBody() SetWrapOpt {
+	return func(base *WrapOptBase) {
+		base.disableUnmarshalBody = true
 	}
 }
