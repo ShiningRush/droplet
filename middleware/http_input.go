@@ -18,9 +18,10 @@ import (
 var DefaultValidator = validator.New()
 
 type HttpInputOption struct {
-	PathParamsFunc func(key string) string
-	InputType      reflect.Type
-	IsReadFromBody bool
+	PathParamsFunc       func(key string) string
+	InputType            reflect.Type
+	IsReadFromBody       bool
+	DisableUnmarshalBody bool
 }
 
 type HttpInputMiddleware struct {
@@ -51,8 +52,10 @@ func (mw *HttpInputMiddleware) Handle(ctx droplet.Context) error {
 	}
 
 	pInput := reflect.New(mw.opt.InputType).Interface()
-	if err := mw.injectFieldFromBody(pInput); err != nil {
-		return data.NewFormatError(err.Error())
+	if !mw.opt.DisableUnmarshalBody {
+		if err := mw.unmarshalFieldFromBody(pInput); err != nil {
+			return data.NewFormatError(err.Error())
+		}
 	}
 
 	if err := mw.injectFieldFromUrlAndMap(pInput); err != nil {
@@ -74,7 +77,7 @@ func (mw *HttpInputMiddleware) Handle(ctx droplet.Context) error {
 	return mw.BaseMiddleware.Handle(ctx)
 }
 
-func (mw *HttpInputMiddleware) injectFieldFromBody(ptr interface{}) error {
+func (mw *HttpInputMiddleware) unmarshalFieldFromBody(ptr interface{}) error {
 	if !mw.opt.IsReadFromBody || mw.req.ContentLength == 0 {
 		return nil
 	}

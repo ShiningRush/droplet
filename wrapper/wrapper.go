@@ -36,12 +36,13 @@ func HandleHttpInPipeline(input HandleHttpInPipelineInput) {
 		})).
 		Add(middleware.NewRespReshapeMiddleware()).
 		Add(middleware.NewHttpInputMiddleWare(middleware.HttpInputOption{
-			PathParamsFunc: input.PathParamsFunc,
-			InputType:      opt.InputType,
-			IsReadFromBody: opt.IsReadFromBody,
+			PathParamsFunc:       input.PathParamsFunc,
+			InputType:            opt.inputType,
+			IsReadFromBody:       opt.isReadFromBody,
+			DisableUnmarshalBody: opt.disableUnmarshalBody,
 		})).
-		Add(middleware.NewTrafficLogMiddleware(opt.TrafficLogOpt)).
-		SetOrchestrator(opt.Orchestrator).
+		Add(middleware.NewTrafficLogMiddleware(opt.trafficLogOpt)).
+		SetOrchestrator(opt.orchestrator).
 		Run(input.Handler, droplet.InitContext(dCtx))
 
 	for k, _ := range dCtx.ResponseHeader() {
