@@ -2,6 +2,7 @@ package droplet
 
 import (
 	"context"
+	"net/http"
 )
 
 type Context interface {
@@ -16,7 +17,10 @@ type Context interface {
 	Output() interface{}
 	SetPath(path string)
 	Path() string
+	ResponseHeader() http.Header
 }
+
+var _ Context = &emptyContext{}
 
 type emptyContext struct {
 	cxt    context.Context
@@ -24,12 +28,14 @@ type emptyContext struct {
 	input  interface{}
 	output interface{}
 	path   string
+	rh     http.Header
 }
 
 func NewContext() *emptyContext {
 	c := &emptyContext{}
 	c.dict = make(map[string]interface{})
 	c.cxt = context.TODO()
+	c.rh = http.Header{}
 	return c
 }
 
@@ -88,4 +94,8 @@ func (c *emptyContext) SetPath(path string) {
 
 func (c *emptyContext) Path() string {
 	return c.path
+}
+
+func (c *emptyContext) ResponseHeader() http.Header {
+	return c.rh
 }

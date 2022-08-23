@@ -47,6 +47,7 @@ type RawResponse struct {
 	StatusCode int
 	Header     http.Header
 	Body       []byte
+	BodyReader io.ReadCloser
 }
 
 func (rr *RawResponse) WriteRawResponse(rw http.ResponseWriter) error {
@@ -54,6 +55,14 @@ func (rr *RawResponse) WriteRawResponse(rw http.ResponseWriter) error {
 		rw.Header()[k] = v
 	}
 	rw.WriteHeader(rr.StatusCode)
+	if rr.BodyReader != nil {
+		defer rr.BodyReader.Close()
+		if _, err := io.Copy(rw, rr.BodyReader); err != nil {
+			return fmt.Errorf("copy body failed: %w", err)
+		}
+		return nil
+	}
+
 	if _, err := rw.Write(rr.Body); err != nil {
 		return fmt.Errorf("write body failed: %w", err)
 	}

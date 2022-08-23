@@ -32,7 +32,7 @@ func (mw *HttpRespReshapeMiddleware) Handle(ctx droplet.Context) error {
 		resp.Set(code, message, d)
 		resp.SetReqID(ctx.GetString(KeyRequestID))
 		ctx.SetOutput(resp)
-		// response reshape is the last step, so we don't need return error
+		// response reshape is the last step, so we don't need to return error
 		return nil
 	}
 

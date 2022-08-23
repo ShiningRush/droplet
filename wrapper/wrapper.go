@@ -44,6 +44,10 @@ func HandleHttpInPipeline(input HandleHttpInPipelineInput) {
 		SetOrchestrator(opt.Orchestrator).
 		Run(input.Handler, droplet.InitContext(dCtx))
 
+	for k, _ := range dCtx.ResponseHeader() {
+		input.RespWriter.SetHeader(k, dCtx.ResponseHeader().Get(k))
+	}
+
 	switch ret.(type) {
 	case droplet.RawHttpResponse:
 		rr := ret.(droplet.RawHttpResponse)
