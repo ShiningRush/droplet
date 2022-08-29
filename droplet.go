@@ -1,16 +1,25 @@
 package droplet
 
 import (
-	"net/http"
-
 	"github.com/shiningrush/droplet/codec"
+	"github.com/shiningrush/droplet/core"
 	"github.com/shiningrush/droplet/data"
+	"github.com/shiningrush/droplet/middleware"
+)
+
+type (
+	Context = core.Context
+	Handler = core.Handler
+)
+
+var (
+	NewContext = core.NewContext
 )
 
 var (
 	Option = GlobalOpt{
 		HeaderKeyRequestID: "X-Request-ID",
-		ResponseNewFunc: func() HttpResponse {
+		ResponseNewFunc: func() core.HttpResponse {
 			return &data.Response{}
 		},
 		Codec: []codec.Interface{
@@ -23,39 +32,8 @@ var (
 
 type GlobalOpt struct {
 	HeaderKeyRequestID string
-	ResponseNewFunc    func() HttpResponse
-	Orchestrator       Orchestrator
+	ResponseNewFunc    func() core.HttpResponse
+	Orchestrator       core.Orchestrator
 	Codec              []codec.Interface
-}
-
-type HttpResponse interface {
-	Set(code int, msg string, data interface{})
-	SetReqID(reqId string)
-}
-
-type HttpFileResponse interface {
-	Get() *data.FileResponse
-}
-
-type SpecCodeHttpResponse interface {
-	GetStatusCode() int
-	HttpResponse
-}
-
-type ResponseWriter interface {
-	SetHeader(key, val string)
-	GetHeader(key string) string
-	GetHeaderValues(key string) []string
-	DelHeader(key string)
-
-	Write([]byte) (int, error)
-	WriteHeader(statusCode int)
-
-	// StdHttpWriter return the http.ResponseWriter, if wrapped framework is not compatible(such as fasthttp)
-	// it will return nil
-	StdHttpWriter() http.ResponseWriter
-}
-
-type RawHttpResponse interface {
-	WriteRawResponse(writer ResponseWriter) error
+	TrafficLogOpt      *middleware.TrafficLogOpt
 }

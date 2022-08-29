@@ -7,15 +7,16 @@ import (
 	"net/http"
 
 	"github.com/shiningrush/droplet"
+	"github.com/shiningrush/droplet/core"
 	"github.com/shiningrush/droplet/log"
 	"github.com/shiningrush/droplet/middleware"
 )
 
 type HandleHttpInPipelineInput struct {
 	Req            *http.Request
-	RespWriter     droplet.ResponseWriter
+	RespWriter     core.ResponseWriter
 	PathParamsFunc func(key string) string
-	Handler        droplet.Handler
+	Handler        core.Handler
 	Opts           []SetWrapOpt
 }
 
@@ -25,38 +26,45 @@ func HandleHttpInPipeline(input HandleHttpInPipelineInput) {
 		op(opt)
 	}
 
-	dCtx := droplet.NewContext()
+	dCtx := core.NewContext()
 	dCtx.SetContext(input.Req.Context())
 
-	ret, _ := droplet.NewPipe().
+	trafficOpt := droplet.Option.TrafficLogOpt
+	if trafficOpt == nil {
+		trafficOpt = &opt.trafficLogOpt
+	}
+
+	ret, _ := core.NewPipe(droplet.Option.Orchestrator).
 		Add(middleware.NewHttpInfoInjectorMiddleware(middleware.HttpInfoInjectorOption{
 			ReqFunc: func() *http.Request {
 				return input.Req
 			},
+			HeaderKeyRequestID: droplet.Option.HeaderKeyRequestID,
 		})).
-		Add(middleware.NewRespReshapeMiddleware()).
+		Add(middleware.NewRespReshapeMiddleware(droplet.Option.ResponseNewFunc)).
 		Add(middleware.NewHttpInputMiddleWare(middleware.HttpInputOption{
 			PathParamsFunc:       input.PathParamsFunc,
 			InputType:            opt.inputType,
 			IsReadFromBody:       opt.isReadFromBody,
 			DisableUnmarshalBody: opt.disableUnmarshalBody,
+			Codecs:               droplet.Option.Codec,
 		})).
-		Add(middleware.NewTrafficLogMiddleware(opt.trafficLogOpt)).
+		Add(middleware.NewTrafficLogMiddleware(trafficOpt)).
 		SetOrchestrator(opt.orchestrator).
-		Run(input.Handler, droplet.InitContext(dCtx))
+		Run(input.Handler, core.InitContext(dCtx))
 
 	for k, _ := range dCtx.ResponseHeader() {
 		input.RespWriter.SetHeader(k, dCtx.ResponseHeader().Get(k))
 	}
 
 	switch ret.(type) {
-	case droplet.RawHttpResponse:
-		rr := ret.(droplet.RawHttpResponse)
+	case core.RawHttpResponse:
+		rr := ret.(core.RawHttpResponse)
 		if err := rr.WriteRawResponse(input.RespWriter); err != nil {
 			logWriteErrors(input.Req, err)
 		}
-	case droplet.HttpFileResponse:
-		fr := ret.(droplet.HttpFileResponse)
+	case core.HttpFileResponse:
+		fr := ret.(core.HttpFileResponse)
 		fileResp := fr.Get()
 		if fileResp.ContentType == "" {
 			fileResp.ContentType = "application/octet-stream"
@@ -78,8 +86,8 @@ func HandleHttpInPipeline(input HandleHttpInPipelineInput) {
 				logWriteErrors(input.Req, err)
 			}
 		}
-	case droplet.SpecCodeHttpResponse:
-		resp := ret.(droplet.SpecCodeHttpResponse)
+	case core.SpecCodeHttpResponse:
+		resp := ret.(core.SpecCodeHttpResponse)
 		if err := writeJsonToResp(input.RespWriter, resp.GetStatusCode(), resp); err != nil {
 			logWriteErrors(input.Req, err)
 		}
@@ -96,7 +104,7 @@ func logWriteErrors(req *http.Request, err error) {
 		"url", req.URL.String())
 }
 
-func writeJsonToResp(rw droplet.ResponseWriter, code int, data interface{}) error {
+func writeJsonToResp(rw core.ResponseWriter, code int, data interface{}) error {
 	bs, err := json.Marshal(data)
 	if err != nil {
 		return fmt.Errorf("json marshal failed: %w", err)

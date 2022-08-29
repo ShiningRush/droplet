@@ -1,9 +1,10 @@
 package middleware
 
 import (
-	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestInputMiddleWare_InjectFieldFromBody(t *testing.T) {

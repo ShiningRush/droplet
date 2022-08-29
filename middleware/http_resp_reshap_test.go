@@ -2,12 +2,13 @@ package middleware
 
 import (
 	"fmt"
-	"github.com/shiningrush/droplet"
+	"net/http"
+	"testing"
+
+	"github.com/shiningrush/droplet/core"
 	"github.com/shiningrush/droplet/data"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"net/http"
-	"testing"
 )
 
 func TestHttpRespReshapeMiddleware_Handle(t *testing.T) {
@@ -77,18 +78,21 @@ func TestHttpRespReshapeMiddleware_Handle(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		mMw := &droplet.MockMiddleware{}
+		mMw := &core.MockMiddleware{}
 		mMw.On("Handle", mock.Anything).Run(func(args mock.Arguments) {
-			ctx := args.Get(0).(droplet.Context)
+			ctx := args.Get(0).(core.Context)
 			ctx.SetOutput(tc.giveResp)
 		}).Return(tc.giveErr)
 
 		testMw := HttpRespReshapeMiddleware{
-			BaseMiddleware{
+			BaseMiddleware: BaseMiddleware{
 				next: mMw,
 			},
+			respNewFunc: func() core.HttpResponse {
+				return &data.Response{}
+			},
 		}
-		c := droplet.NewContext()
+		c := core.NewContext()
 		err := testMw.Handle(c)
 		if err != nil {
 			assert.Equal(t, tc.wantErr, err)

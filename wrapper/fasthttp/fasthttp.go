@@ -3,7 +3,7 @@ package fasthttp
 import (
 	"net/http"
 
-	"github.com/shiningrush/droplet"
+	"github.com/shiningrush/droplet/core"
 	"github.com/shiningrush/droplet/wrapper"
 	"github.com/valyala/fasthttp"
 	"github.com/valyala/fasthttp/fasthttpadaptor"
@@ -42,7 +42,7 @@ func (r *HttpRespWriterWrapper) StdHttpWriter() http.ResponseWriter {
 	return nil
 }
 
-func Wraps(handler droplet.Handler, opts ...wrapper.SetWrapOpt) fasthttp.RequestHandler {
+func Wraps(handler core.Handler, opts ...wrapper.SetWrapOpt) fasthttp.RequestHandler {
 	return func(ctx *fasthttp.RequestCtx) {
 		newReq := http.Request{}
 		if err := fasthttpadaptor.ConvertRequest(ctx, &newReq, true); err != nil {

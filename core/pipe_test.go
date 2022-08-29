@@ -1,8 +1,9 @@
-package droplet
+package core
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type testInput struct {
@@ -41,7 +42,7 @@ func (f *secondMiddleWare) Handle(context Context) error {
 
 func TestPipeWork(t *testing.T) {
 	input := "hello"
-	resp, err := NewPipe().
+	resp, err := NewPipe(nil).
 		AddIf(&firstMiddleWare{}, false).
 		Add(&secondMiddleWare{}).
 		Run(func(ctx Context) (interface{}, error) {
@@ -52,7 +53,7 @@ func TestPipeWork(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "so", resp)
 
-	resp, err = NewPipe().
+	resp, err = NewPipe(nil).
 		AddIf(&firstMiddleWare{}, true).
 		Add(&secondMiddleWare{}).
 		Run(func(ctx Context) (interface{}, error) {
@@ -63,7 +64,7 @@ func TestPipeWork(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "fo", resp)
 
-	resp, err = NewPipe().
+	resp, err = NewPipe(nil).
 		AddIf(&firstMiddleWare{}, true).
 		AddIf(&secondMiddleWare{}, false).
 		Run(func(ctx Context) (interface{}, error) {
@@ -76,12 +77,12 @@ func TestPipeWork(t *testing.T) {
 
 	// Orchestrator case
 	order := 0
-	Option.Orchestrator = func(mws []Middleware) []Middleware {
+	gOrc := func(mws []Middleware) []Middleware {
 		assert.Equal(t, 0, order)
 		order++
 		return mws
 	}
-	resp, err = NewPipe().
+	resp, err = NewPipe(gOrc).
 		Add(&firstMiddleWare{}).
 		SetOrchestrator(func(mws []Middleware) []Middleware {
 			assert.Equal(t, 1, len(mws))

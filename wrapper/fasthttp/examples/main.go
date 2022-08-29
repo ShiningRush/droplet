@@ -5,7 +5,7 @@ import (
 	"reflect"
 
 	"github.com/fasthttp/router"
-	"github.com/shiningrush/droplet"
+	"github.com/shiningrush/droplet/core"
 	"github.com/shiningrush/droplet/wrapper"
 	fasthttpwrap "github.com/shiningrush/droplet/wrapper/fasthttp"
 	"github.com/valyala/fasthttp"
@@ -26,7 +26,7 @@ type JsonInput struct {
 	Body  []byte   `auto_read:"@body"`
 }
 
-func JsonInputDo(ctx droplet.Context) (interface{}, error) {
+func JsonInputDo(ctx core.Context) (interface{}, error) {
 	input := ctx.Input().(*JsonInput)
 
 	return input, nil

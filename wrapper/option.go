@@ -3,7 +3,7 @@ package wrapper
 import (
 	"reflect"
 
-	"github.com/shiningrush/droplet"
+	"github.com/shiningrush/droplet/core"
 	"github.com/shiningrush/droplet/middleware"
 )
 
@@ -14,7 +14,7 @@ type WrapOptBase struct {
 
 	trafficLogOpt middleware.TrafficLogOpt
 
-	orchestrator droplet.Orchestrator
+	orchestrator core.Orchestrator
 }
 
 type SetWrapOpt func(base *WrapOptBase)
@@ -37,19 +37,25 @@ func ReadFromBody() SetWrapOpt {
 	}
 }
 
-func LogReqAndResp() SetWrapOpt {
+func LogReq() SetWrapOpt {
 	return func(base *WrapOptBase) {
-		base.trafficLogOpt.IsLogReqAndResp = true
+		base.trafficLogOpt.LogReq = true
 	}
 }
 
-func LogFunc(logFunc func(log *middleware.TrafficLog)) SetWrapOpt {
+func LogResp() SetWrapOpt {
 	return func(base *WrapOptBase) {
-		base.trafficLogOpt.LogFunc = logFunc
+		base.trafficLogOpt.LogResp = true
 	}
 }
 
-func Orchestrator(o droplet.Orchestrator) SetWrapOpt {
+func SetLogger(logger middleware.TrafficLogger) SetWrapOpt {
+	return func(base *WrapOptBase) {
+		base.trafficLogOpt.Logger = logger
+	}
+}
+
+func Orchestrator(o core.Orchestrator) SetWrapOpt {
 	return func(base *WrapOptBase) {
 		base.orchestrator = o
 	}

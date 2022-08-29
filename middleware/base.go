@@ -1,18 +1,18 @@
 package middleware
 
 import (
-	"github.com/shiningrush/droplet"
+	"github.com/shiningrush/droplet/core"
 )
 
 type BaseMiddleware struct {
-	next droplet.Middleware
+	next core.Middleware
 }
 
-func (mw *BaseMiddleware) SetNext(next droplet.Middleware) {
+func (mw *BaseMiddleware) SetNext(next core.Middleware) {
 	mw.next = next
 }
 
-func (mw *BaseMiddleware) Handle(ctx droplet.Context) error {
+func (mw *BaseMiddleware) Handle(ctx core.Context) error {
 	return mw.next.Handle(ctx)
 }
 

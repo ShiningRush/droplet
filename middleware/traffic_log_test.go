@@ -2,60 +2,97 @@ package middleware
 
 import (
 	"fmt"
-	"github.com/shiningrush/droplet"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/golang/mock/gomock"
+	"github.com/shiningrush/droplet/core"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestTrafficLogMiddleware_Handle(t *testing.T) {
 	tests := []struct {
-		giveOpt TrafficLogOpt
-		wantLog *TrafficLog
+		name        string
+		giveOpt     TrafficLogOpt
+		wantReqLog  *RequestTrafficLog
+		wantRespLog *ResponseTrafficLog
 	}{
 		{
+			name: "normal",
 			giveOpt: TrafficLogOpt{
-				IsLogReqAndResp: true,
+				LogReq:  true,
+				LogResp: true,
 			},
-			wantLog: &TrafficLog{
-				Path:        "path",
-				Method:      "method",
-				ElapsedTime: 100,
-				Input:       "req",
-				Output:      "resp",
-				Error:       fmt.Errorf("failed"),
+			wantReqLog: &RequestTrafficLog{
+				RequestID: "req",
+				Path:      "path",
+				Method:    "method",
+				Input:     "req",
+			},
+			wantRespLog: &ResponseTrafficLog{
+				RequestID: "req",
+				Error:     fmt.Errorf("test errr"),
+				Output:    "output",
+			},
+		},
+		{
+			name: "do not log req resp",
+			giveOpt: TrafficLogOpt{
+				LogReq:  false,
+				LogResp: false,
+			},
+			wantReqLog: &RequestTrafficLog{
+				RequestID: "req",
+				Path:      "path",
+				Method:    "method",
+			},
+			wantRespLog: &ResponseTrafficLog{
+				RequestID: "req",
+				Error:     fmt.Errorf("test errr"),
 			},
 		},
 	}
 
 	for _, tc := range tests {
-		mMw := &droplet.MockMiddleware{}
-		mMw.On("Handle", mock.Anything).Run(func(args mock.Arguments) {
-			time.Sleep(time.Duration(tc.wantLog.ElapsedTime) * time.Millisecond)
-		}).Return(tc.wantLog.Error)
+		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
 
-		testMw := TrafficLogMiddleware{
-			opt: tc.giveOpt,
-			BaseMiddleware: BaseMiddleware{
-				next: mMw,
-			},
-		}
-		c := droplet.NewContext()
-		c.SetPath(tc.wantLog.Path)
-		c.Set(KeyHttpRequest, &http.Request{
-			Method: tc.wantLog.Method,
+			mMw := &core.MockMiddleware{}
+			mMw.On("Handle", mock.Anything).Run(func(args mock.Arguments) {
+				time.Sleep(time.Duration(tc.wantRespLog.ElapsedTime) * time.Millisecond)
+			}).Return(tc.wantRespLog.Error)
+
+			testMw := TrafficLogMiddleware{
+				opt: &tc.giveOpt,
+				BaseMiddleware: BaseMiddleware{
+					next: mMw,
+				},
+			}
+			c := core.NewContext()
+			c.SetPath(tc.wantReqLog.Path)
+			c.Set(KeyHttpRequest, &http.Request{
+				Method: tc.wantReqLog.Method,
+			})
+			c.Set(KeyRequestID, tc.wantReqLog.RequestID)
+			c.SetInput(tc.wantReqLog.Input)
+			c.SetOutput(tc.wantRespLog.Output)
+			tc.wantReqLog.Context = c.Context()
+			tc.wantRespLog.Context = c.Context()
+
+			ml := NewMockTrafficLogger(ctrl)
+			ml.EXPECT().LogRequest(gomock.Any()).Do(func(reqLog interface{}) {
+				assert.Equal(t, tc.wantReqLog, reqLog)
+			})
+			ml.EXPECT().LogResponse(gomock.Any()).Do(func(respLog interface{}) {
+				assert.Equal(t, tc.wantRespLog, respLog)
+			})
+
+			defaultLogger = ml
+			err := testMw.Handle(c)
+			assert.Equal(t, tc.wantRespLog.Error, err)
 		})
-		c.SetInput(tc.wantLog.Input)
-		c.SetOutput(tc.wantLog.Output)
-		testMw.opt.LogFunc = func(log *TrafficLog) {
-			assert.GreaterOrEqual(t, log.ElapsedTime, tc.wantLog.ElapsedTime)
-			log.ElapsedTime = 0
-			tc.wantLog.ElapsedTime = 0
-			assert.Equal(t, tc.wantLog, log)
-		}
-		err := testMw.Handle(c)
-		assert.Equal(t, tc.wantLog.Error, err)
 	}
 }
