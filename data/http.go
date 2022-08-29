@@ -13,9 +13,12 @@ func CopyBody(req *http.Request) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("read body failed: %w", err)
 	}
-	if err := req.Body.Close(); err != nil {
-		return nil, fmt.Errorf("close body failed: %w", err)
-	}
+	// According to document, we does need to close request body:
+	// For server requests, the Request Body is always non-nil
+	// but will return EOF immediately when no body is present.
+	// The Server will close the request body. The ServeHTTP
+	// Handler does not need to.
+
 	req.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
 	return bodyBytes, nil
 }

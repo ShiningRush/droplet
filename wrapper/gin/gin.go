@@ -2,11 +2,11 @@ package gin
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/shiningrush/droplet"
+	"github.com/shiningrush/droplet/core"
 	"github.com/shiningrush/droplet/wrapper"
 )
 
-func Wraps(handler droplet.Handler, opts ...wrapper.SetWrapOpt) func(*gin.Context) {
+func Wraps(handler core.Handler, opts ...wrapper.SetWrapOpt) func(*gin.Context) {
 	return func(ctx *gin.Context) {
 		wrapper.HandleHttpInPipeline(wrapper.HandleHttpInPipelineInput{
 			Req:            ctx.Request,

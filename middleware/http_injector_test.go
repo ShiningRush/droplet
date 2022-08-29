@@ -1,21 +1,22 @@
 package middleware
 
 import (
-	"github.com/shiningrush/droplet"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"net/http"
 	"net/url"
 	"testing"
+
+	"github.com/shiningrush/droplet/core"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestNewHttpInfoInjectorMiddleware(t *testing.T) {
 	tests := []struct {
 		giveOpt HttpInfoInjectorOption
-		giveCtx droplet.Context
+		giveCtx core.Context
 	}{
 		{
-			giveCtx: droplet.NewContext(),
+			giveCtx: core.NewContext(),
 			giveOpt: HttpInfoInjectorOption{
 				ReqFunc: func() *http.Request {
 					return &http.Request{
@@ -23,7 +24,7 @@ func TestNewHttpInfoInjectorMiddleware(t *testing.T) {
 							Path: "path",
 						},
 						Header: http.Header{
-							droplet.Option.HeaderKeyRequestID: []string{"reqId"},
+							"X-Request-ID": []string{"reqId"},
 						},
 					}
 				},
@@ -35,14 +36,14 @@ func TestNewHttpInfoInjectorMiddleware(t *testing.T) {
 		h := NewHttpInfoInjectorMiddleware(tc.giveOpt)
 
 		nextCalled := false
-		mMw := &droplet.MockMiddleware{}
+		mMw := &core.MockMiddleware{}
 		mMw.On("Handle", mock.Anything).Run(func(args mock.Arguments) {
 			nextCalled = true
-			ctx := args.Get(0).(droplet.Context)
+			ctx := args.Get(0).(core.Context)
 			req := ctx.Get(KeyHttpRequest)
 			assert.Equal(t, tc.giveOpt.ReqFunc(), req)
 			reqId := ctx.Get(KeyRequestID)
-			assert.Equal(t, tc.giveOpt.ReqFunc().Header.Get(droplet.Option.HeaderKeyRequestID), reqId)
+			assert.Equal(t, tc.giveOpt.ReqFunc().Header.Get("X-Request-ID"), reqId)
 			assert.Equal(t, ctx.Path(), tc.giveOpt.ReqFunc().URL.Path)
 		}).Return(nil)
 		h.SetNext(mMw)

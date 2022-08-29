@@ -1,11 +1,12 @@
 package main
 
 import (
+	"reflect"
+
 	"github.com/gin-gonic/gin"
-	"github.com/shiningrush/droplet"
+	"github.com/shiningrush/droplet/core"
 	"github.com/shiningrush/droplet/wrapper"
 	ginwrap "github.com/shiningrush/droplet/wrapper/gin"
-	"reflect"
 )
 
 func main() {
@@ -22,7 +23,7 @@ type JsonInput struct {
 	Body  []byte   `auto_read:"@body"`
 }
 
-func JsonInputDo(ctx droplet.Context) (interface{}, error) {
+func JsonInputDo(ctx core.Context) (interface{}, error) {
 	input := ctx.Input().(*JsonInput)
 
 	return input, nil

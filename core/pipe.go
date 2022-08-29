@@ -1,16 +1,19 @@
-package droplet
+package core
 
 type Orchestrator func(mws []Middleware) []Middleware
 
 type Handler func(ctx Context) (interface{}, error)
 
 type BasePipe struct {
-	mwOrchestrator Orchestrator
-	mws            []Middleware
+	globalOrchestrator Orchestrator
+	mwOrchestrator     Orchestrator
+	mws                []Middleware
 }
 
-func NewPipe() *BasePipe {
-	return &BasePipe{}
+func NewPipe(gOrc Orchestrator) *BasePipe {
+	return &BasePipe{
+		globalOrchestrator: gOrc,
+	}
 }
 
 func (p *BasePipe) SetOrchestrator(o Orchestrator) *BasePipe {
@@ -61,8 +64,8 @@ func (p *BasePipe) Run(handler Handler, opts ...SetRunOpt) (interface{}, error) 
 	}
 
 	handlerMw := NewHandlerMiddleware(handler)
-	if Option.Orchestrator != nil {
-		p.mws = Option.Orchestrator(p.mws)
+	if p.globalOrchestrator != nil {
+		p.mws = p.globalOrchestrator(p.mws)
 	}
 	if p.mwOrchestrator != nil {
 		p.mws = p.mwOrchestrator(p.mws)

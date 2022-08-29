@@ -1,19 +1,21 @@
 package middleware
 
 import (
-	"github.com/shiningrush/droplet"
+	"github.com/shiningrush/droplet/core"
 	"github.com/shiningrush/droplet/data"
 )
 
 type HttpRespReshapeMiddleware struct {
 	BaseMiddleware
+
+	respNewFunc func() core.HttpResponse
 }
 
-func NewRespReshapeMiddleware() *HttpRespReshapeMiddleware {
-	return &HttpRespReshapeMiddleware{}
+func NewRespReshapeMiddleware(respNewFunc func() core.HttpResponse) *HttpRespReshapeMiddleware {
+	return &HttpRespReshapeMiddleware{respNewFunc: respNewFunc}
 }
 
-func (mw *HttpRespReshapeMiddleware) Handle(ctx droplet.Context) error {
+func (mw *HttpRespReshapeMiddleware) Handle(ctx core.Context) error {
 	code, message := 0, ""
 	var d interface{}
 	if err := mw.BaseMiddleware.Handle(ctx); err != nil {
@@ -23,11 +25,11 @@ func (mw *HttpRespReshapeMiddleware) Handle(ctx droplet.Context) error {
 		default:
 			code, message = data.ErrCodeInternal, err.Error()
 		}
-		var resp droplet.HttpResponse
-		if r, ok := ctx.Output().(droplet.HttpResponse); ok {
+		var resp core.HttpResponse
+		if r, ok := ctx.Output().(core.HttpResponse); ok {
 			resp = r
 		} else {
-			resp = droplet.Option.ResponseNewFunc()
+			resp = mw.respNewFunc()
 		}
 		resp.Set(code, message, d)
 		resp.SetReqID(ctx.GetString(KeyRequestID))
@@ -37,12 +39,12 @@ func (mw *HttpRespReshapeMiddleware) Handle(ctx droplet.Context) error {
 	}
 
 	switch ctx.Output().(type) {
-	case droplet.RawHttpResponse, droplet.HttpFileResponse:
-	case droplet.HttpResponse:
-		resp := ctx.Output().(droplet.HttpResponse)
+	case core.RawHttpResponse, core.HttpFileResponse:
+	case core.HttpResponse:
+		resp := ctx.Output().(core.HttpResponse)
 		resp.SetReqID(ctx.GetString(KeyRequestID))
 	default:
-		resp := droplet.Option.ResponseNewFunc()
+		resp := mw.respNewFunc()
 		resp.Set(code, message, ctx.Output())
 		resp.SetReqID(ctx.GetString(KeyRequestID))
 		ctx.SetOutput(resp)

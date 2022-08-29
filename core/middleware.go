@@ -1,4 +1,4 @@
-package droplet
+package core
 
 type Middleware interface {
 	SetNext(next Middleware)

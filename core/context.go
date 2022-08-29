@@ -1,4 +1,4 @@
-package droplet
+package core
 
 import (
 	"context"

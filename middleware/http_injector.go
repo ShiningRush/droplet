@@ -1,8 +1,9 @@
 package middleware
 
 import (
-	"github.com/shiningrush/droplet"
 	"net/http"
+
+	"github.com/shiningrush/droplet/core"
 )
 
 type HttpInfoInjectorMiddleware struct {
@@ -11,18 +12,19 @@ type HttpInfoInjectorMiddleware struct {
 }
 
 type HttpInfoInjectorOption struct {
-	ReqFunc func() *http.Request
+	ReqFunc            func() *http.Request
+	HeaderKeyRequestID string
 }
 
 func NewHttpInfoInjectorMiddleware(opt HttpInfoInjectorOption) *HttpInfoInjectorMiddleware {
 	return &HttpInfoInjectorMiddleware{opt: opt}
 }
 
-func (mw *HttpInfoInjectorMiddleware) Handle(ctx droplet.Context) error {
+func (mw *HttpInfoInjectorMiddleware) Handle(ctx core.Context) error {
 	req := mw.opt.ReqFunc()
 
 	ctx.Set(KeyHttpRequest, req)
-	ctx.Set(KeyRequestID, req.Header.Get(droplet.Option.HeaderKeyRequestID))
+	ctx.Set(KeyRequestID, req.Header.Get(mw.opt.HeaderKeyRequestID))
 	ctx.SetPath(req.URL.Path)
 
 	return mw.BaseMiddleware.Handle(ctx)

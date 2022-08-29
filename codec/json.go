@@ -2,6 +2,7 @@ package codec
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/shiningrush/droplet/data"
@@ -20,9 +21,16 @@ func (j *Json) Unmarshal(req *http.Request, ptr interface{}) error {
 		return err
 	}
 
-	return json.Unmarshal(bs, ptr)
+	if err := json.Unmarshal(bs, ptr); err != nil {
+		return fmt.Errorf("json codec unmarshal failed: %w", err)
+	}
+	return nil
 }
 
 func (j *Json) Marshal(ptr interface{}) ([]byte, error) {
-	return json.Marshal(ptr)
+	bs, err := json.Marshal(ptr)
+	if err != nil {
+		return nil, fmt.Errorf("json codec marshal failed: %w", err)
+	}
+	return bs, nil
 }

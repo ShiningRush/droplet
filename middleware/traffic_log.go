@@ -1,84 +1,124 @@
+//go:generate mockgen -source traffic_log.go  -destination traffic_log_mock.go -package middleware
 package middleware
 
 import (
+	"context"
 	"encoding/json"
-	"github.com/shiningrush/droplet"
-	"github.com/shiningrush/droplet/log"
 	"net/http"
 	"time"
+
+	"github.com/shiningrush/droplet/core"
+	"github.com/shiningrush/droplet/log"
 )
 
 type TrafficLogMiddleware struct {
-	opt TrafficLogOpt
+	opt *TrafficLogOpt
 	BaseMiddleware
 }
 
-type TrafficLog struct {
+type RequestTrafficLog struct {
+	Context context.Context `json:"-"`
+
+	RequestID string      `json:"request_id,omitempty"`
+	Path      string      `json:"path,omitempty"`
+	Method    string      `json:"method,omitempty"`
+	Input     interface{} `json:"request,omitempty"`
+}
+
+type ResponseTrafficLog struct {
+	Context context.Context `json:"-"`
+
 	RequestID   string      `json:"request_id,omitempty"`
-	Path        string      `json:"path,omitempty"`
-	Method      string      `json:"method,omitempty"`
 	ElapsedTime int64       `json:"elapsed_time,omitempty"`
-	Input       interface{} `json:"request,omitempty"`
 	Output      interface{} `json:"response,omitempty"`
 	Error       error       `json:"error,omitempty"`
 }
 
 type TrafficLogOpt struct {
-	IsLogReqAndResp bool
-	LogFunc         func(log *TrafficLog)
+	LogReq  bool
+	LogResp bool
+	Logger  TrafficLogger
 }
 
-func NewTrafficLogMiddleware(opt TrafficLogOpt) *TrafficLogMiddleware {
+func NewTrafficLogMiddleware(opt *TrafficLogOpt) *TrafficLogMiddleware {
 	return &TrafficLogMiddleware{
 		opt: opt,
 	}
 }
 
-var defaultLogFunc = func(tl *TrafficLog) {
-	if tl.Input == nil && tl.Output == nil {
-		log.Info("request finished",
-			"request_id", tl.RequestID,
-			"path", tl.Path,
-			"method", tl.Method,
-			"elapsed_time", tl.ElapsedTime,
-			"err", tl.Error)
-		return
-	}
-	input, _ := json.Marshal(tl.Input)
-	output, _ := json.Marshal(tl.Output)
-	log.Info("request finished",
-		"request_id", tl.RequestID,
-		"path", tl.Path,
-		"method", tl.Method,
-		"elapsed_time", tl.ElapsedTime,
-		"err", tl.Error,
-		"input", input,
-		"output", output)
+type TrafficLogger interface {
+	LogRequest(tr *RequestTrafficLog)
+	LogResponse(tr *ResponseTrafficLog)
 }
 
-func (mw *TrafficLogMiddleware) Handle(ctx droplet.Context) error {
-	if mw.opt.LogFunc == nil {
-		mw.opt.LogFunc = defaultLogFunc
+var defaultLogger TrafficLogger = &defaultTrafficLogger{}
+
+type defaultTrafficLogger struct {
+}
+
+func (l *defaultTrafficLogger) LogRequest(tr *RequestTrafficLog) {
+	fields := []interface{}{
+		"request_id", tr.RequestID,
+		"path", tr.Path,
+		"method", tr.Method,
+	}
+	if tr.Input != nil {
+		input, _ := json.Marshal(tr.Input)
+		fields = append(fields, []interface{}{
+			"input", string(input),
+		}...)
+	}
+	log.CtxInfo(tr.Context, "request start", fields...)
+}
+
+func (l *defaultTrafficLogger) LogResponse(tr *ResponseTrafficLog) {
+	fields := []interface{}{
+		"request_id", tr.RequestID,
+		"elapsed_time", tr.ElapsedTime,
+	}
+	if tr.Error != nil {
+		fields = append(fields, []interface{}{
+			"err", tr.Error,
+		}...)
+	}
+	if tr.Output != nil {
+		output, _ := json.Marshal(tr.Output)
+		fields = append(fields, []interface{}{
+			"output", string(output),
+		}...)
+	}
+	log.CtxInfo(tr.Context, "request complete", fields...)
+}
+
+func (mw *TrafficLogMiddleware) Handle(ctx core.Context) error {
+	if mw.opt.Logger == nil {
+		mw.opt.Logger = defaultLogger
 	}
 
-	logMsg := &TrafficLog{
+	reqLog := &RequestTrafficLog{
+		Context:   ctx.Context(),
 		RequestID: ctx.GetString(KeyRequestID),
 		Path:      ctx.Path(),
 		Method:    ctx.Get(KeyHttpRequest).(*http.Request).Method,
 	}
-	logMsg.Path = ctx.Path()
-	logMsg.Method = ctx.Get(KeyHttpRequest).(*http.Request).Method
+	if mw.opt.LogReq {
+		reqLog.Input = ctx.Input()
+	}
+	mw.opt.Logger.LogRequest(reqLog)
 
+	respLog := &ResponseTrafficLog{
+		Context:   ctx.Context(),
+		RequestID: ctx.GetString(KeyRequestID),
+	}
 	now := time.Now()
-	logMsg.Error = mw.BaseMiddleware.Handle(ctx)
-	logMsg.ElapsedTime = time.Since(now).Nanoseconds() / 1000 / 1000 // ns to ms
+	respLog.Error = mw.BaseMiddleware.Handle(ctx)
+	respLog.ElapsedTime = time.Since(now).Nanoseconds() / 1000 / 1000 // ns to ms
 
-	if mw.opt.IsLogReqAndResp {
-		logMsg.Input = ctx.Input()
-		logMsg.Output = ctx.Output()
+	if mw.opt.LogResp {
+		respLog.Output = ctx.Output()
 	}
 
-	mw.opt.LogFunc(logMsg)
+	mw.opt.Logger.LogResponse(respLog)
 
-	return logMsg.Error
+	return respLog.Error
 }

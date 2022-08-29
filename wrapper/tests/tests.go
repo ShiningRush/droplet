@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/shiningrush/droplet"
+	"github.com/shiningrush/droplet/core"
 	"github.com/shiningrush/droplet/data"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -53,7 +53,7 @@ type JsonResponseParam struct {
 	UrlDefault string `auth_read:"default"`
 }
 
-func (h *ServerTestHandler) JsonResponse(ctx droplet.Context) (interface{}, error) {
+func (h *ServerTestHandler) JsonResponse(ctx core.Context) (interface{}, error) {
 	return ctx.Input(), nil
 }
 
@@ -61,7 +61,7 @@ type SpecResponseOption struct {
 	Type string
 }
 
-func (h *ServerTestHandler) SpecResponse(ctx droplet.Context) (interface{}, error) {
+func (h *ServerTestHandler) SpecResponse(ctx core.Context) (interface{}, error) {
 	opt := ctx.Input().(*SpecResponseOption)
 
 	switch opt.Type {

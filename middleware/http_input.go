@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -9,8 +10,8 @@ import (
 	"unicode"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/shiningrush/droplet"
 	"github.com/shiningrush/droplet/codec"
+	"github.com/shiningrush/droplet/core"
 	"github.com/shiningrush/droplet/data"
 )
 
@@ -22,6 +23,7 @@ type HttpInputOption struct {
 	InputType            reflect.Type
 	IsReadFromBody       bool
 	DisableUnmarshalBody bool
+	Codecs               []codec.Interface
 }
 
 type HttpInputMiddleware struct {
@@ -36,7 +38,7 @@ func NewHttpInputMiddleWare(opt HttpInputOption) *HttpInputMiddleware {
 	return &HttpInputMiddleware{opt: opt}
 }
 
-func (mw *HttpInputMiddleware) Handle(ctx droplet.Context) error {
+func (mw *HttpInputMiddleware) Handle(ctx core.Context) error {
 	httpReq := ctx.Get(KeyHttpRequest)
 	if httpReq == nil {
 		return fmt.Errorf("input middleware cannot get http request, please check if HttpInfoInjectorMiddleware middlle work well")
@@ -84,7 +86,7 @@ func (mw *HttpInputMiddleware) unmarshalFieldFromBody(ptr interface{}) error {
 
 	contentType := mw.req.Header.Get("Content-Type")
 	var coc codec.Interface = &codec.Json{}
-	for _, c := range droplet.Option.Codec {
+	for _, c := range mw.opt.Codecs {
 		for _, ctt := range c.ContentType() {
 			if strings.HasPrefix(contentType, ctt) {
 				coc = c
@@ -133,6 +135,11 @@ func (mw *HttpInputMiddleware) injectFieldFromUrlAndMap(ptr interface{}) error {
 				}
 			}
 			if name == "@body" {
+				if input.Field(i).Type().Implements(reflect.TypeOf((*io.ReadCloser)(nil)).Elem()) {
+					input.Field(i).Set(reflect.ValueOf(mw.req.Body))
+					continue
+				}
+
 				bs, err := data.CopyBody(mw.req)
 				if err != nil {
 					return err
