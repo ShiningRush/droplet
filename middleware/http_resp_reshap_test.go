@@ -88,7 +88,7 @@ func TestHttpRespReshapeMiddleware_Handle(t *testing.T) {
 			BaseMiddleware: BaseMiddleware{
 				next: mMw,
 			},
-			respNewFunc: func() core.HttpResponse {
+			respNewFunc: func() data.HttpResponse {
 				return &data.Response{}
 			},
 		}

@@ -19,7 +19,7 @@ var (
 var (
 	Option = GlobalOpt{
 		HeaderKeyRequestID: "X-Request-ID",
-		ResponseNewFunc: func() core.HttpResponse {
+		ResponseNewFunc: func() data.HttpResponse {
 			return &data.Response{}
 		},
 		Codec: []codec.Interface{
@@ -32,7 +32,7 @@ var (
 
 type GlobalOpt struct {
 	HeaderKeyRequestID string
-	ResponseNewFunc    func() core.HttpResponse
+	ResponseNewFunc    func() data.HttpResponse
 	Orchestrator       core.Orchestrator
 	Codec              []codec.Interface
 	TrafficLogOpt      *middleware.TrafficLogOpt

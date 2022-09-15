@@ -8,13 +8,14 @@ import (
 
 	"github.com/shiningrush/droplet"
 	"github.com/shiningrush/droplet/core"
+	"github.com/shiningrush/droplet/data"
 	"github.com/shiningrush/droplet/log"
 	"github.com/shiningrush/droplet/middleware"
 )
 
 type HandleHttpInPipelineInput struct {
 	Req            *http.Request
-	RespWriter     core.ResponseWriter
+	RespWriter     data.ResponseWriter
 	PathParamsFunc func(key string) string
 	Handler        core.Handler
 	Opts           []SetWrapOpt
@@ -58,13 +59,13 @@ func HandleHttpInPipeline(input HandleHttpInPipelineInput) {
 	}
 
 	switch ret.(type) {
-	case core.RawHttpResponse:
-		rr := ret.(core.RawHttpResponse)
+	case data.RawHttpResponse:
+		rr := ret.(data.RawHttpResponse)
 		if err := rr.WriteRawResponse(input.RespWriter); err != nil {
 			logWriteErrors(input.Req, err)
 		}
-	case core.HttpFileResponse:
-		fr := ret.(core.HttpFileResponse)
+	case data.HttpFileResponse:
+		fr := ret.(data.HttpFileResponse)
 		fileResp := fr.Get()
 		if fileResp.ContentType == "" {
 			fileResp.ContentType = "application/octet-stream"
@@ -86,8 +87,8 @@ func HandleHttpInPipeline(input HandleHttpInPipelineInput) {
 				logWriteErrors(input.Req, err)
 			}
 		}
-	case core.SpecCodeHttpResponse:
-		resp := ret.(core.SpecCodeHttpResponse)
+	case data.SpecCodeHttpResponse:
+		resp := ret.(data.SpecCodeHttpResponse)
 		if err := writeJsonToResp(input.RespWriter, resp.GetStatusCode(), resp); err != nil {
 			logWriteErrors(input.Req, err)
 		}
@@ -104,7 +105,7 @@ func logWriteErrors(req *http.Request, err error) {
 		"url", req.URL.String())
 }
 
-func writeJsonToResp(rw core.ResponseWriter, code int, data interface{}) error {
+func writeJsonToResp(rw data.ResponseWriter, code int, data interface{}) error {
 	bs, err := json.Marshal(data)
 	if err != nil {
 		return fmt.Errorf("json marshal failed: %w", err)
