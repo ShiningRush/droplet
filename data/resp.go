@@ -6,6 +6,46 @@ import (
 	"net/http"
 )
 
+type HttpResponse interface {
+	Set(code int, msg string, data interface{})
+	SetReqID(reqId string)
+}
+
+type HttpFileResponse interface {
+	Get() *FileResponse
+}
+
+type SpecCodeHttpResponse interface {
+	GetStatusCode() int
+	HttpResponse
+}
+
+type ResponseWriter interface {
+	SetHeader(key, val string)
+	GetHeader(key string) string
+	GetHeaderValues(key string) []string
+	DelHeader(key string)
+
+	Write([]byte) (int, error)
+	WriteHeader(statusCode int)
+
+	// StdHttpWriter return the http.ResponseWriter, if wrapped framework is not compatible(such as fasthttp)
+	// it will return nil
+	StdHttpWriter() http.ResponseWriter
+}
+
+type RawHttpResponse interface {
+	WriteRawResponse(writer ResponseWriter) error
+}
+
+// interface validate
+var (
+	_ HttpResponse         = (*Response)(nil)
+	_ SpecCodeHttpResponse = (*SpecCodeResponse)(nil)
+	_ HttpFileResponse     = (*FileResponse)(nil)
+	_ RawHttpResponse      = (*RawResponse)(nil)
+)
+
 type Response struct {
 	Code      int         `json:"code"`
 	Message   string      `json:"message"`
@@ -51,9 +91,9 @@ type RawResponse struct {
 	BodyReader io.ReadCloser
 }
 
-func (rr *RawResponse) WriteRawResponse(rw http.ResponseWriter) error {
+func (rr *RawResponse) WriteRawResponse(rw ResponseWriter) error {
 	for k, v := range rr.Header {
-		rw.Header()[k] = v
+		rw.SetHeader(k, v[0])
 	}
 	rw.WriteHeader(rr.StatusCode)
 	if rr.BodyReader != nil {

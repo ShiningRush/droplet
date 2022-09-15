@@ -8,10 +8,10 @@ import (
 type HttpRespReshapeMiddleware struct {
 	BaseMiddleware
 
-	respNewFunc func() core.HttpResponse
+	respNewFunc func() data.HttpResponse
 }
 
-func NewRespReshapeMiddleware(respNewFunc func() core.HttpResponse) *HttpRespReshapeMiddleware {
+func NewRespReshapeMiddleware(respNewFunc func() data.HttpResponse) *HttpRespReshapeMiddleware {
 	return &HttpRespReshapeMiddleware{respNewFunc: respNewFunc}
 }
 
@@ -25,8 +25,8 @@ func (mw *HttpRespReshapeMiddleware) Handle(ctx core.Context) error {
 		default:
 			code, message = data.ErrCodeInternal, err.Error()
 		}
-		var resp core.HttpResponse
-		if r, ok := ctx.Output().(core.HttpResponse); ok {
+		var resp data.HttpResponse
+		if r, ok := ctx.Output().(data.HttpResponse); ok {
 			resp = r
 		} else {
 			resp = mw.respNewFunc()
@@ -39,9 +39,9 @@ func (mw *HttpRespReshapeMiddleware) Handle(ctx core.Context) error {
 	}
 
 	switch ctx.Output().(type) {
-	case core.RawHttpResponse, core.HttpFileResponse:
-	case core.HttpResponse:
-		resp := ctx.Output().(core.HttpResponse)
+	case data.RawHttpResponse, data.HttpFileResponse:
+	case data.HttpResponse:
+		resp := ctx.Output().(data.HttpResponse)
 		resp.SetReqID(ctx.GetString(KeyRequestID))
 	default:
 		resp := mw.respNewFunc()

@@ -1,39 +1,18 @@
 package core
 
 import (
-	"net/http"
-
 	"github.com/shiningrush/droplet/data"
 )
 
-type HttpResponse interface {
-	Set(code int, msg string, data interface{})
-	SetReqID(reqId string)
-}
-
-type HttpFileResponse interface {
-	Get() *data.FileResponse
-}
-
-type SpecCodeHttpResponse interface {
-	GetStatusCode() int
-	HttpResponse
-}
-
-type ResponseWriter interface {
-	SetHeader(key, val string)
-	GetHeader(key string) string
-	GetHeaderValues(key string) []string
-	DelHeader(key string)
-
-	Write([]byte) (int, error)
-	WriteHeader(statusCode int)
-
-	// StdHttpWriter return the http.ResponseWriter, if wrapped framework is not compatible(such as fasthttp)
-	// it will return nil
-	StdHttpWriter() http.ResponseWriter
-}
-
-type RawHttpResponse interface {
-	WriteRawResponse(writer ResponseWriter) error
-}
+type (
+	// Deprecated: plz use data.HttpResponse instead of it
+	HttpResponse = data.HttpResponse
+	// Deprecated: plz use data.HttpFileResponse instead of it
+	HttpFileResponse = data.HttpFileResponse
+	// Deprecated: plz use data.SpecCodeResponse instead of it
+	SpecCodeHttpResponse = data.SpecCodeResponse
+	// Deprecated: plz use data.SpecCodeHttpResponse instead of it
+	ResponseWriter = data.SpecCodeHttpResponse
+	// Deprecated: plz use data.RawResponse instead of it
+	RawHttpResponse = data.RawResponse
+)
