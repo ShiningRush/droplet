@@ -34,6 +34,11 @@ type ResponseWriter interface {
 	StdHttpWriter() http.ResponseWriter
 }
 
+type StreamSetter interface {
+	ResponseWriter
+	SetStream(context io.ReadCloser, size int)
+}
+
 type RawHttpResponse interface {
 	WriteRawResponse(writer ResponseWriter) error
 }
@@ -77,6 +82,7 @@ type FileResponse struct {
 	ContentType   string
 	Content       []byte
 	ContentReader io.ReadCloser
+	Size          int
 	StatusCode    int
 }
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/shiningrush/droplet"
 	"github.com/shiningrush/droplet/core"
@@ -66,27 +67,7 @@ func HandleHttpInPipeline(input HandleHttpInPipelineInput) {
 		}
 	case data.HttpFileResponse:
 		fr := ret.(data.HttpFileResponse)
-		fileResp := fr.Get()
-		if fileResp.ContentType == "" {
-			fileResp.ContentType = "application/octet-stream"
-		}
-		if fileResp.StatusCode > 0 {
-			input.RespWriter.WriteHeader(fileResp.StatusCode)
-		}
-		input.RespWriter.SetHeader("Content-Disposition", fmt.Sprintf("attachment; filename=%s", fileResp.Name))
-		input.RespWriter.SetHeader("Content-type", fileResp.ContentType)
-		if fileResp.ContentReader != nil {
-			defer fileResp.ContentReader.Close()
-			_, err := io.Copy(input.RespWriter, fileResp.ContentReader)
-			if err != nil {
-				logWriteErrors(input.Req, err)
-			}
-		} else {
-			_, err := input.RespWriter.Write(fileResp.Content)
-			if err != nil {
-				logWriteErrors(input.Req, err)
-			}
-		}
+		writeFileResp(input, fr)
 	case data.SpecCodeHttpResponse:
 		resp := ret.(data.SpecCodeHttpResponse)
 		if err := writeJsonToResp(input.RespWriter, resp.GetStatusCode(), resp); err != nil {
@@ -96,6 +77,40 @@ func HandleHttpInPipeline(input HandleHttpInPipelineInput) {
 		if err := writeJsonToResp(input.RespWriter, http.StatusOK, ret); err != nil {
 			logWriteErrors(input.Req, err)
 		}
+	}
+}
+
+func writeFileResp(input HandleHttpInPipelineInput, fr data.HttpFileResponse) {
+	fileResp := fr.Get()
+	if fileResp.ContentType == "" {
+		fileResp.ContentType = "application/octet-stream"
+	}
+	if fileResp.StatusCode > 0 {
+		input.RespWriter.WriteHeader(fileResp.StatusCode)
+	}
+	input.RespWriter.SetHeader("Content-Disposition", fmt.Sprintf("attachment; filename=%s", fileResp.Name))
+	input.RespWriter.SetHeader("Content-type", fileResp.ContentType)
+	if fileResp.Size != 0 {
+		input.RespWriter.SetHeader("Content-Length", strconv.Itoa(fileResp.Size))
+	}
+
+	if fileResp.ContentReader != nil {
+		if sw, ok := input.RespWriter.(data.StreamSetter); ok {
+			sw.SetStream(fileResp.ContentReader, fileResp.Size)
+			return
+		}
+
+		defer fileResp.ContentReader.Close()
+		_, err := io.Copy(input.RespWriter, fileResp.ContentReader)
+		if err != nil {
+			logWriteErrors(input.Req, err)
+		}
+		return
+	}
+
+	_, err := input.RespWriter.Write(fileResp.Content)
+	if err != nil {
+		logWriteErrors(input.Req, err)
 	}
 }
 

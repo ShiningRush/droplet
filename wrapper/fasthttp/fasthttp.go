@@ -1,13 +1,17 @@
 package fasthttp
 
 import (
+	"io"
 	"net/http"
 
 	"github.com/shiningrush/droplet/core"
+	"github.com/shiningrush/droplet/data"
 	"github.com/shiningrush/droplet/wrapper"
 	"github.com/valyala/fasthttp"
 	"github.com/valyala/fasthttp/fasthttpadaptor"
 )
+
+var _ data.StreamSetter = (*HttpRespWriterWrapper)(nil)
 
 type HttpRespWriterWrapper struct {
 	raw *fasthttp.Response
@@ -40,6 +44,10 @@ func (r *HttpRespWriterWrapper) WriteHeader(statusCode int) {
 
 func (r *HttpRespWriterWrapper) StdHttpWriter() http.ResponseWriter {
 	return nil
+}
+
+func (r *HttpRespWriterWrapper) SetStream(content io.ReadCloser, size int) {
+	r.raw.SetBodyStream(content, size)
 }
 
 func Wraps(handler core.Handler, opts ...wrapper.SetWrapOpt) fasthttp.RequestHandler {
