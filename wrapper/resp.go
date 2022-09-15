@@ -1,11 +1,17 @@
 package wrapper
 
-import "net/http"
+import (
+	"net/http"
+
+	"github.com/shiningrush/droplet/data"
+)
 
 // NewResponseWriter wrap a http.ResponseWriter to ResponseWriter
 func NewResponseWriter(w http.ResponseWriter) *StdWriterWrapper {
 	return &StdWriterWrapper{stdWriter: w}
 }
+
+var _ data.ResponseWriter = (*StdWriterWrapper)()
 
 type StdWriterWrapper struct {
 	stdWriter http.ResponseWriter
