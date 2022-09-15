@@ -11,7 +11,7 @@ func NewResponseWriter(w http.ResponseWriter) *StdWriterWrapper {
 	return &StdWriterWrapper{stdWriter: w}
 }
 
-var _ data.ResponseWriter = (*StdWriterWrapper)()
+var _ data.ResponseWriter = (*StdWriterWrapper)(nil)
 
 type StdWriterWrapper struct {
 	stdWriter http.ResponseWriter
