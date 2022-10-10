@@ -74,6 +74,34 @@ func Test_changeToFieldKind(t *testing.T) {
 			wantRet:   int64(0),
 			wantErr:   require.NoError,
 		},
+		{
+			caseDesc:  "uint",
+			giveVal:   "123",
+			giveField: reflect.TypeOf(uint(123)),
+			wantRet:   uint(123),
+			wantErr:   require.NoError,
+		},
+		{
+			caseDesc:  "uint-empty",
+			giveVal:   "",
+			giveField: reflect.TypeOf(uint(123)),
+			wantRet:   uint(0),
+			wantErr:   require.NoError,
+		},
+		{
+			caseDesc:  "uint64",
+			giveVal:   "123",
+			giveField: reflect.TypeOf(uint64(123)),
+			wantRet:   uint64(123),
+			wantErr:   require.NoError,
+		},
+		{
+			caseDesc:  "uint64-empty",
+			giveVal:   "",
+			giveField: reflect.TypeOf(uint64(123)),
+			wantRet:   uint64(0),
+			wantErr:   require.NoError,
+		},
 	}
 
 	for _, tc := range tests {
