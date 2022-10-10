@@ -253,7 +253,7 @@ func changeToFieldKind(str string, t reflect.Type) (interface{}, error) {
 
 	if kind == reflect.Uint {
 		if str == "" {
-			return 0, nil
+			return uint(0), nil
 		}
 		i, err := strconv.ParseUint(str, 10, 0)
 		if err != nil {
@@ -269,7 +269,7 @@ func changeToFieldKind(str string, t reflect.Type) (interface{}, error) {
 
 	if kind == reflect.Int64 {
 		if str == "" {
-			return 0, nil
+			return int64(0), nil
 		}
 		i, err := strconv.ParseInt(str, 10, 64)
 		if err != nil {
@@ -284,7 +284,7 @@ func changeToFieldKind(str string, t reflect.Type) (interface{}, error) {
 
 	if kind == reflect.Uint64 {
 		if str == "" {
-			return 0, nil
+			return uint64(0), nil
 		}
 		i, err := strconv.ParseUint(str, 10, 64)
 		if err != nil {
