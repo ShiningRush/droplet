@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/fasthttp/router v1.4.11
-	github.com/shiningrush/droplet v0.3.0
+	github.com/shiningrush/droplet v0.4.1
 	github.com/valyala/fasthttp v1.38.0
 )
 
