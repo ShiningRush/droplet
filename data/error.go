@@ -5,12 +5,18 @@ import (
 )
 
 const (
+	// ErrCodeInternal is default error code
 	ErrCodeInternal = 10000
+	// ErrCodeNotFound mean that the record you querying does not found
 	ErrCodeNotFound = 10001
+	// ErrCodeConflict mean that the record you want to insert/update is conflicted with others
 	ErrCodeConflict = 10002
+	// ErrCodeFriendly is indicated that the message should display to client
 	ErrCodeFriendly = 10003
+	// ErrCodeValidate mean that the format of request's parameter is not validated(e.g. not match business logic)
 	ErrCodeValidate = 10004
-	ErrCodeFormat   = 10005
+	// ErrCodeFormat mean that the format of request's parameter is incorrect
+	ErrCodeFormat = 10005
 )
 
 var (
@@ -55,7 +61,7 @@ func NewNotFoundError(msg string) error {
 		return ErrNotFound
 	}
 	return &BaseError{
-		Code:    100,
+		Code:    ErrCodeNotFound,
 		Message: msg,
 	}
 }
@@ -65,7 +71,7 @@ func NewConflictError(msg string) error {
 		return ErrConflict
 	}
 	return &BaseError{
-		Code:    101,
+		Code:    ErrCodeConflict,
 		Message: msg,
 	}
 }
