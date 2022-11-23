@@ -16,7 +16,7 @@ func TestNewHttpInfoInjectorMiddleware(t *testing.T) {
 		giveCtx core.Context
 	}{
 		{
-			giveCtx: core.NewContext(nil),
+			giveCtx: core.NewContext(),
 			giveOpt: HttpInfoInjectorOption{
 				ReqFunc: func() *http.Request {
 					return &http.Request{

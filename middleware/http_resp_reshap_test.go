@@ -92,7 +92,7 @@ func TestHttpRespReshapeMiddleware_Handle(t *testing.T) {
 				return &data.Response{}
 			},
 		}
-		c := core.NewContext(nil)
+		c := core.NewContext()
 		err := testMw.Handle(c)
 		if err != nil {
 			assert.Equal(t, tc.wantErr, err)

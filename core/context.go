@@ -21,13 +21,18 @@ type Context interface {
 	ResponseHeader() http.Header
 }
 
-func NewContext(req *http.Request) Context {
+func NewContext() Context {
 	c := &emptyContext{}
 	c.dict = make(map[string]interface{})
 	c.cxt = context.TODO()
-	c.req = req
 	c.rh = http.Header{}
 	return c
+}
+
+func NewContextWithReq(req *http.Request) Context {
+	ctx := NewContext().(*emptyContext)
+	ctx.req = req
+	return ctx
 }
 
 var _ Context = (*emptyContext)(nil)

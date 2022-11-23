@@ -28,7 +28,7 @@ func HandleHttpInPipeline(input HandleHttpInPipelineInput) {
 		op(opt)
 	}
 
-	dCtx := core.NewContext(input.Req)
+	dCtx := core.NewContextWithReq(input.Req)
 	dCtx.SetContext(input.Req.Context())
 
 	trafficOpt := droplet.Option.TrafficLogOpt

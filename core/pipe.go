@@ -61,7 +61,7 @@ func (p *BasePipe) Run(handler Handler, opts ...SetRunOpt) (interface{}, error) 
 	initCtx := opt.InitContext
 	if initCtx == nil {
 		// default context is not contain http info
-		initCtx = NewContext(nil)
+		initCtx = NewContext()
 	}
 
 	handlerMw := NewHandlerMiddleware(handler)

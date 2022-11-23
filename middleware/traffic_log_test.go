@@ -71,7 +71,7 @@ func TestTrafficLogMiddleware_Handle(t *testing.T) {
 					next: mMw,
 				},
 			}
-			c := core.NewContext(nil)
+			c := core.NewContext()
 			c.SetPath(tc.wantReqLog.Path)
 			c.Set(KeyHttpRequest, &http.Request{
 				Method: tc.wantReqLog.Method,
