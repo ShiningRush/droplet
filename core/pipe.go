@@ -46,7 +46,7 @@ type RunOpt struct {
 
 type SetRunOpt func(opt *RunOpt)
 
-func InitContext(ctx Context) SetRunOpt {
+func WithRunContext(ctx Context) SetRunOpt {
 	return func(opt *RunOpt) {
 		opt.InitContext = ctx
 	}
@@ -60,7 +60,8 @@ func (p *BasePipe) Run(handler Handler, opts ...SetRunOpt) (interface{}, error) 
 
 	initCtx := opt.InitContext
 	if initCtx == nil {
-		initCtx = NewContext()
+		// default context is not contain http info
+		initCtx = NewContext(nil)
 	}
 
 	handlerMw := NewHandlerMiddleware(handler)

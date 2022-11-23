@@ -16,7 +16,7 @@ func TestNewHttpInfoInjectorMiddleware(t *testing.T) {
 		giveCtx core.Context
 	}{
 		{
-			giveCtx: core.NewContext(),
+			giveCtx: core.NewContext(nil),
 			giveOpt: HttpInfoInjectorOption{
 				ReqFunc: func() *http.Request {
 					return &http.Request{
@@ -45,6 +45,7 @@ func TestNewHttpInfoInjectorMiddleware(t *testing.T) {
 			reqId := ctx.Get(KeyRequestID)
 			assert.Equal(t, tc.giveOpt.ReqFunc().Header.Get("X-Request-ID"), reqId)
 			assert.Equal(t, ctx.Path(), tc.giveOpt.ReqFunc().URL.Path)
+			assert.Equal(t, tc.giveCtx.Request(), ctx.Request())
 		}).Return(nil)
 		h.SetNext(mMw)
 
