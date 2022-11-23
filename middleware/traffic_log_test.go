@@ -33,6 +33,8 @@ func TestTrafficLogMiddleware_Handle(t *testing.T) {
 			},
 			wantRespLog: &ResponseTrafficLog{
 				RequestID: "req",
+				Path:      "path",
+				Method:    "method",
 				Error:     fmt.Errorf("test errr"),
 				Output:    "output",
 			},
@@ -50,6 +52,8 @@ func TestTrafficLogMiddleware_Handle(t *testing.T) {
 			},
 			wantRespLog: &ResponseTrafficLog{
 				RequestID: "req",
+				Path:      "path",
+				Method:    "method",
 				Error:     fmt.Errorf("test errr"),
 			},
 		},
