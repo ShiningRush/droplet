@@ -28,7 +28,7 @@ func HandleHttpInPipeline(input HandleHttpInPipelineInput) {
 		op(opt)
 	}
 
-	dCtx := core.NewContext()
+	dCtx := core.NewContext(input.Req)
 	dCtx.SetContext(input.Req.Context())
 
 	trafficOpt := droplet.Option.TrafficLogOpt
@@ -53,7 +53,7 @@ func HandleHttpInPipeline(input HandleHttpInPipelineInput) {
 		})).
 		Add(middleware.NewTrafficLogMiddleware(trafficOpt)).
 		SetOrchestrator(opt.orchestrator).
-		Run(input.Handler, core.InitContext(dCtx))
+		Run(input.Handler, core.WithRunContext(dCtx))
 
 	for k, _ := range dCtx.ResponseHeader() {
 		input.RespWriter.SetHeader(k, dCtx.ResponseHeader().Get(k))

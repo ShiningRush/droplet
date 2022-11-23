@@ -17,10 +17,20 @@ type Context interface {
 	Output() interface{}
 	SetPath(path string)
 	Path() string
+	Request() *http.Request
 	ResponseHeader() http.Header
 }
 
-var _ Context = &emptyContext{}
+func NewContext(req *http.Request) Context {
+	c := &emptyContext{}
+	c.dict = make(map[string]interface{})
+	c.cxt = context.TODO()
+	c.req = req
+	c.rh = http.Header{}
+	return c
+}
+
+var _ Context = (*emptyContext)(nil)
 
 type emptyContext struct {
 	cxt    context.Context
@@ -28,15 +38,8 @@ type emptyContext struct {
 	input  interface{}
 	output interface{}
 	path   string
+	req    *http.Request
 	rh     http.Header
-}
-
-func NewContext() *emptyContext {
-	c := &emptyContext{}
-	c.dict = make(map[string]interface{})
-	c.cxt = context.TODO()
-	c.rh = http.Header{}
-	return c
 }
 
 func (c *emptyContext) Context() context.Context {
@@ -94,6 +97,10 @@ func (c *emptyContext) SetPath(path string) {
 
 func (c *emptyContext) Path() string {
 	return c.path
+}
+
+func (c *emptyContext) Request() *http.Request {
+	return c.req
 }
 
 func (c *emptyContext) ResponseHeader() http.Header {
