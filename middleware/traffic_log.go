@@ -29,6 +29,8 @@ type ResponseTrafficLog struct {
 	Context context.Context `json:"-"`
 
 	RequestID   string      `json:"request_id,omitempty"`
+	Path        string      `json:"path,omitempty"`
+	Method      string      `json:"method,omitempty"`
 	ElapsedTime int64       `json:"elapsed_time,omitempty"`
 	Output      interface{} `json:"response,omitempty"`
 	Error       error       `json:"error,omitempty"`
@@ -74,6 +76,8 @@ func (l *defaultTrafficLogger) LogRequest(tr *RequestTrafficLog) {
 func (l *defaultTrafficLogger) LogResponse(tr *ResponseTrafficLog) {
 	fields := []interface{}{
 		"request_id", tr.RequestID,
+		"path", tr.Path,
+		"method", tr.Method,
 		"elapsed_time", tr.ElapsedTime,
 	}
 	if tr.Error != nil {
@@ -109,6 +113,8 @@ func (mw *TrafficLogMiddleware) Handle(ctx core.Context) error {
 	respLog := &ResponseTrafficLog{
 		Context:   ctx.Context(),
 		RequestID: ctx.GetString(KeyRequestID),
+		Path:      ctx.Path(),
+		Method:    ctx.Get(KeyHttpRequest).(*http.Request).Method,
 	}
 	now := time.Now()
 	respLog.Error = mw.BaseMiddleware.Handle(ctx)
