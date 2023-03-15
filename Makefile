@@ -21,7 +21,7 @@ mock:
 .PHONY: tidy
 tidy:
 	go mod tidy && go fmt ./...
-	$(foreach var,$(WRAPPER_SUBMODULES),cd $(PWD)/wrapper/$(var) && go mod tidy && go fmt ./...;)
+	@$(foreach var,$(WRAPPER_SUBMODULES),cd $(PWD)/wrapper/$(var) && go mod tidy && go fmt ./...;)
 
 .PHONY: test
 test:

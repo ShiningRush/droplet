@@ -84,6 +84,8 @@ type FileResponse struct {
 	ContentReader io.ReadCloser
 	Size          int
 	StatusCode    int
+
+	ExtraHeader map[string]string
 }
 
 func (r *FileResponse) Get() *FileResponse {

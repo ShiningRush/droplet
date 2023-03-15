@@ -93,6 +93,11 @@ func writeFileResp(input HandleHttpInPipelineInput, fr data.HttpFileResponse) {
 	if fileResp.Size != 0 {
 		input.RespWriter.SetHeader("Content-Length", strconv.Itoa(fileResp.Size))
 	}
+	if fileResp.ExtraHeader != nil {
+		for k, v := range fileResp.ExtraHeader {
+			input.RespWriter.SetHeader(k, v)
+		}
+	}
 
 	if fileResp.ContentReader != nil {
 		if sw, ok := input.RespWriter.(data.StreamSetter); ok {
