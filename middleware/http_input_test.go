@@ -1,6 +1,10 @@
 package middleware
 
 import (
+	"bytes"
+	"io"
+	"net/http"
+	"net/url"
 	"reflect"
 	"testing"
 
@@ -8,8 +12,69 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestInputMiddleWare_InjectFieldFromBody(t *testing.T) {
+func FixedPathFunc(key string) string {
+	return key
+}
 
+type TestInput struct {
+	QueryString   string  `auto_read:"query_str,query"`
+	HeaderInt     int     `auto_read:"header-int,header"`
+	DefaultIntPtr *int    `auto_read:"query_int"`
+	PathStrPtr    *string `auto_read:"path_str,path"`
+	Body          []byte  `auto_read:"@body"`
+}
+
+func strPtr(str string) *string {
+	return &str
+}
+
+func TestInputMiddleWare_injectFieldFromUrlAndMap(t *testing.T) {
+	tests := []struct {
+		name    string
+		giveMw  *HttpInputMiddleware
+		givePtr interface{}
+		wantPtr interface{}
+		wantErr require.ErrorAssertionFunc
+	}{
+		{
+			name: "normal",
+			giveMw: &HttpInputMiddleware{
+				opt: HttpInputOption{
+					PathParamsFunc: FixedPathFunc,
+					IsReadFromBody: true,
+				},
+				req: &http.Request{
+					URL:    &url.URL{RawQuery: "query_str=query_string&test=2"},
+					Method: http.MethodPost,
+					Header: map[string][]string{
+						"Header-Int": {"10"},
+					},
+					Body: io.NopCloser(bytes.NewBufferString("all body")),
+				},
+				searchMap: nil,
+			},
+			givePtr: &TestInput{},
+			wantPtr: &TestInput{
+				QueryString:   "query_string",
+				HeaderInt:     10,
+				DefaultIntPtr: nil,
+				PathStrPtr:    strPtr("path_str"),
+				Body:          []byte("all body"),
+			},
+			wantErr: require.NoError,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			err := tc.giveMw.injectFieldFromUrlAndMap(tc.givePtr)
+			tc.wantErr(t, err)
+			if err != nil {
+				return
+			}
+			assert.Equal(t, tc.wantPtr, tc.givePtr)
+		})
+	}
 }
 
 func boolPtr(b bool) *bool {

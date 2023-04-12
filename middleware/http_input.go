@@ -163,8 +163,8 @@ func (mw *HttpInputMiddleware) injectFieldFromUrlAndMap(ptr interface{}) error {
 		if err != nil {
 			return err
 		}
-		if tarVal == nil {
-			return nil
+		if tarVal == nil || reflect.ValueOf(tarVal).IsZero() {
+			continue
 		}
 		input.Field(i).Set(reflect.ValueOf(tarVal))
 	}
