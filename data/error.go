@@ -1,6 +1,7 @@
 package data
 
 import (
+	"errors"
 	"fmt"
 )
 
@@ -42,18 +43,68 @@ func (e *BaseError) Is(err error) bool {
 	if err == nil {
 		return false
 	}
+
+	// type assert for high performance
 	switch t := err.(type) {
-	case *CallSrvError:
+	case *ErrWrapper:
 		return t.Code == e.Code
 	case *BaseError:
 		return t.Code == e.Code
 	}
+
+	wErr := &ErrWrapper{}
+	if errors.As(err, &wErr) {
+		return e.Code == wErr.Code
+	}
+
+	bErr := &BaseError{}
+	if errors.As(err, &bErr) {
+		return e.Code == bErr.Code
+	}
+
 	return false
 }
 
-type CallSrvError struct {
-	SrvResp *Response
-	BaseError
+type ErrWrapper struct {
+	Code int
+	Msg  string
+	Data interface{}
+}
+
+func (e *ErrWrapper) Error() string {
+	if e.Data != nil {
+		return fmt.Sprintf("wrapper validate failed, code: [%d], msg : [%s], data: [%+v]", e.Code, e.Msg, e.Data)
+	}
+
+	return fmt.Sprintf("wrapper validate failed, code: [%d], msg : [%s]", e.Code, e.Msg)
+}
+
+type ErrHttp struct {
+	StatusCode int
+	Body       []byte
+}
+
+func (e *ErrHttp) Error() string {
+	if len(e.Body) == 0 {
+		return fmt.Sprintf("http validate failed, status: [%d]", e.StatusCode)
+	}
+	return fmt.Sprintf("http validate failed, status: [%d], body : [%s]", e.StatusCode, string(e.Body))
+}
+
+type ErrCall struct {
+	Url    string
+	LogID  string
+	Method string
+
+	SrcErr error
+}
+
+func (e *ErrCall) Error() string {
+	return fmt.Sprintf("%s [%s] failed, logid:[%s], source err: [%s]", e.Method, e.Url, e.LogID, e.SrcErr)
+}
+
+func (e *ErrCall) Unwrap() error {
+	return e.SrcErr
 }
 
 func NewNotFoundError(msg string) error {
