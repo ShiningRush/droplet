@@ -18,6 +18,7 @@ func FixedPathFunc(key string) string {
 
 type TestInput struct {
 	QueryString   string  `auto_read:"query_str,query"`
+	QueryEmptyPtr *string `auto_read:"empty_str,query"`
 	HeaderInt     int     `auto_read:"header-int,header"`
 	DefaultIntPtr *int    `auto_read:"query_int"`
 	PathStrPtr    *string `auto_read:"path_str,path"`
