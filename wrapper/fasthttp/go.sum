@@ -38,8 +38,8 @@ github.com/rogpeppe/go-internal v1.8.0 h1:FCbCCtXNOY3UtUuHUYaghJg4y7Fd14rXifAYUA
 github.com/rogpeppe/go-internal v1.8.0/go.mod h1:WmiCO8CzOY8rg0OYDC4/i/2WRWAB6poM+XZ2dLUbcbE=
 github.com/savsgio/gotils v0.0.0-20220530130905-52f3993e8d6d h1:Q+gqLBOPkFGHyCJxXMRqtUgUbTjI8/Ze8vu8GGyNFwo=
 github.com/savsgio/gotils v0.0.0-20220530130905-52f3993e8d6d/go.mod h1:Gy+0tqhJvgGlqnTF8CVGP0AaGRjwBtXs/a5PA0Y3+A4=
-github.com/shiningrush/droplet v0.4.1 h1:Jb2oxAYY4e/68mdIlm5KZt52MPoaK+iPGc1I1KzoTwc=
-github.com/shiningrush/droplet v0.4.1/go.mod h1:pONf2XJ+gDbhIKgMKOXi2KH1L0dkjATKv4Er4W5LHmw=
+github.com/shiningrush/droplet v0.4.2 h1:G73Hit6j4LYcrbXItYIVdV65SdWTMFmEj2LrjsQ0wR8=
+github.com/shiningrush/droplet v0.4.2/go.mod h1:pONf2XJ+gDbhIKgMKOXi2KH1L0dkjATKv4Er4W5LHmw=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.4.0 h1:M2gUjqZET1qApGOWNSnZ49BAIMX4F/1plDv3+l31EJ4=
 github.com/stretchr/objx v0.4.0/go.mod h1:YvHI0jy2hoMjB+UWwv71VJQ9isScKT/TqJzVSSt89Yw=
