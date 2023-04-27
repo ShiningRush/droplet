@@ -36,4 +36,5 @@ type GlobalOpt struct {
 	Orchestrator       core.Orchestrator
 	Codec              []codec.Interface
 	TrafficLogOpt      *middleware.TrafficLogOpt
+	DefaultErrCode     int
 }

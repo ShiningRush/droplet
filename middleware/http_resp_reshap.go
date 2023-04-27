@@ -5,14 +5,22 @@ import (
 	"github.com/shiningrush/droplet/data"
 )
 
+type HttpRespReshapeOpt struct {
+	DefaultErrCode int
+}
+
 type HttpRespReshapeMiddleware struct {
 	BaseMiddleware
 
+	opt         HttpRespReshapeOpt
 	respNewFunc func() data.HttpResponse
 }
 
-func NewRespReshapeMiddleware(respNewFunc func() data.HttpResponse) *HttpRespReshapeMiddleware {
-	return &HttpRespReshapeMiddleware{respNewFunc: respNewFunc}
+func NewRespReshapeMiddleware(respNewFunc func() data.HttpResponse, opt HttpRespReshapeOpt) *HttpRespReshapeMiddleware {
+	return &HttpRespReshapeMiddleware{
+		opt:         opt,
+		respNewFunc: respNewFunc,
+	}
 }
 
 func (mw *HttpRespReshapeMiddleware) Handle(ctx core.Context) error {
@@ -37,7 +45,12 @@ func (mw *HttpRespReshapeMiddleware) Handle(ctx core.Context) error {
 		case *data.BaseError:
 			resp.Set(t.Code, t.Message, t.Data)
 		default:
-			resp.Set(data.ErrCodeInternal, handlerErr.Error(), nil)
+			errCode := data.ErrCodeInternal
+			if mw.opt.DefaultErrCode != 0 {
+				errCode = mw.opt.DefaultErrCode
+			}
+
+			resp.Set(errCode, handlerErr.Error(), nil)
 		}
 	}
 
