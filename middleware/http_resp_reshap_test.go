@@ -13,12 +13,15 @@ import (
 
 func TestHttpRespReshapeMiddleware_Handle(t *testing.T) {
 	tests := []struct {
-		giveResp interface{}
-		giveErr  error
-		wantErr  error
-		wantResp interface{}
+		name        string
+		giveOptCode int
+		giveResp    interface{}
+		giveErr     error
+		wantErr     error
+		wantResp    interface{}
 	}{
 		{
+			name:    "def-code",
 			giveErr: fmt.Errorf("failed"),
 			wantResp: &data.Response{
 				Code:    data.ErrCodeInternal,
@@ -26,6 +29,16 @@ func TestHttpRespReshapeMiddleware_Handle(t *testing.T) {
 			},
 		},
 		{
+			name:        "opt-code",
+			giveOptCode: 500,
+			giveErr:     fmt.Errorf("failed"),
+			wantResp: &data.Response{
+				Code:    500,
+				Message: "failed",
+			},
+		},
+		{
+			name:    "err-diff",
 			giveErr: fmt.Errorf("failed"),
 			giveResp: &data.Response{
 				Code:    http.StatusOK,
@@ -37,6 +50,7 @@ func TestHttpRespReshapeMiddleware_Handle(t *testing.T) {
 			},
 		},
 		{
+			name:    "spec-status-code",
 			giveErr: fmt.Errorf("failed"),
 			giveResp: &data.SpecCodeResponse{
 				Response: data.Response{
@@ -52,6 +66,7 @@ func TestHttpRespReshapeMiddleware_Handle(t *testing.T) {
 			},
 		},
 		{
+			name: "friend",
 			giveErr: &data.BaseError{
 				Code:    data.ErrCodeFriendly,
 				Message: "friendly error",
@@ -62,12 +77,14 @@ func TestHttpRespReshapeMiddleware_Handle(t *testing.T) {
 			},
 		},
 		{
+			name:     "text-resp",
 			giveResp: "test",
 			wantResp: &data.Response{
 				Data: "test",
 			},
 		},
 		{
+			name: "wrapper-resp",
 			giveResp: &data.Response{
 				Data: "test",
 			},
@@ -78,26 +95,29 @@ func TestHttpRespReshapeMiddleware_Handle(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		mMw := &core.MockMiddleware{}
-		mMw.On("Handle", mock.Anything).Run(func(args mock.Arguments) {
-			ctx := args.Get(0).(core.Context)
-			ctx.SetOutput(tc.giveResp)
-		}).Return(tc.giveErr)
+		t.Run(tc.name, func(t *testing.T) {
+			mMw := &core.MockMiddleware{}
+			mMw.On("Handle", mock.Anything).Run(func(args mock.Arguments) {
+				ctx := args.Get(0).(core.Context)
+				ctx.SetOutput(tc.giveResp)
+			}).Return(tc.giveErr)
 
-		testMw := HttpRespReshapeMiddleware{
-			BaseMiddleware: BaseMiddleware{
-				next: mMw,
-			},
-			respNewFunc: func() data.HttpResponse {
-				return &data.Response{}
-			},
-		}
-		c := core.NewContext()
-		err := testMw.Handle(c)
-		if err != nil {
-			assert.Equal(t, tc.wantErr, err)
-			continue
-		}
-		assert.Equal(t, tc.wantResp, c.Output())
+			testMw := HttpRespReshapeMiddleware{
+				opt: HttpRespReshapeOpt{DefaultErrCode: tc.giveOptCode},
+				BaseMiddleware: BaseMiddleware{
+					next: mMw,
+				},
+				respNewFunc: func() data.HttpResponse {
+					return &data.Response{}
+				},
+			}
+			c := core.NewContext()
+			err := testMw.Handle(c)
+			if err != nil {
+				assert.Equal(t, tc.wantErr, err)
+				return
+			}
+			assert.Equal(t, tc.wantResp, c.Output())
+		})
 	}
 }

@@ -43,7 +43,9 @@ func HandleHttpInPipeline(input HandleHttpInPipelineInput) {
 			},
 			HeaderKeyRequestID: droplet.Option.HeaderKeyRequestID,
 		})).
-		Add(middleware.NewRespReshapeMiddleware(droplet.Option.ResponseNewFunc)).
+		Add(middleware.NewRespReshapeMiddleware(droplet.Option.ResponseNewFunc, middleware.HttpRespReshapeOpt{
+			DefaultErrCode: droplet.Option.DefaultErrCode,
+		})).
 		Add(middleware.NewHttpInputMiddleWare(middleware.HttpInputOption{
 			PathParamsFunc:       input.PathParamsFunc,
 			InputType:            opt.inputType,
