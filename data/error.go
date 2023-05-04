@@ -40,29 +40,7 @@ func (e *BaseError) Error() string {
 }
 
 func (e *BaseError) Is(err error) bool {
-	if err == nil {
-		return false
-	}
-
-	// type assert for high performance
-	switch t := err.(type) {
-	case *ErrWrapper:
-		return t.Code == e.Code
-	case *BaseError:
-		return t.Code == e.Code
-	}
-
-	wErr := &ErrWrapper{}
-	if errors.As(err, &wErr) {
-		return e.Code == wErr.Code
-	}
-
-	bErr := &BaseError{}
-	if errors.As(err, &bErr) {
-		return e.Code == bErr.Code
-	}
-
-	return false
+	return IsErrCode(e.Code, err)
 }
 
 type ErrWrapper struct {
@@ -170,4 +148,30 @@ type ValidateErrItem struct {
 	ParamName string      `json:"paramName"`
 	Reason    string      `json:"reason"`
 	Detail    interface{} `json:"detail"`
+}
+
+func IsErrCode(code int, err error) bool {
+	if err == nil {
+		return false
+	}
+
+	// type assert for high performance
+	switch t := err.(type) {
+	case *ErrWrapper:
+		return t.Code == code
+	case *BaseError:
+		return t.Code == code
+	}
+
+	wErr := &ErrWrapper{}
+	if errors.As(err, &wErr) {
+		return wErr.Code == code
+	}
+
+	bErr := &BaseError{}
+	if errors.As(err, &bErr) {
+		return bErr.Code == code
+	}
+
+	return false
 }
