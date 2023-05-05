@@ -70,15 +70,15 @@ func (e *ErrHttp) Error() string {
 }
 
 type ErrCall struct {
-	Url    string
-	LogID  string
-	Method string
+	Url       string
+	RequestID string
+	Method    string
 
 	SrcErr error
 }
 
 func (e *ErrCall) Error() string {
-	return fmt.Sprintf("%s [%s] failed, logid:[%s], source err: [%s]", e.Method, e.Url, e.LogID, e.SrcErr)
+	return fmt.Sprintf("%s [%s] failed, reqid:[%s], source err: [%s]", e.Method, e.Url, e.RequestID, e.SrcErr)
 }
 
 func (e *ErrCall) Unwrap() error {
