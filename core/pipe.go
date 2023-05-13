@@ -82,7 +82,7 @@ func (p *BasePipe) Run(handler Handler, opts ...SetRunOpt) (interface{}, error) 
 
 	if len(p.mws) == 0 {
 		err := handlerMw.Handle(initCtx)
-		return initCtx, err
+		return initCtx.Output(), err
 	}
 
 	err := p.mws[0].Handle(initCtx)

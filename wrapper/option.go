@@ -19,8 +19,13 @@ type WrapOptBase struct {
 
 type SetWrapOpt func(base *WrapOptBase)
 
+// InputType set input type by reflect.Type
+// example: wrapper.InputType(reflect.TypeOf(&JsonInput{}))
 func InputType(p reflect.Type) SetWrapOpt {
 	return func(base *WrapOptBase) {
+		if p == nil {
+			return
+		}
 		if p.Kind() == reflect.Ptr {
 			p = p.Elem()
 		}
@@ -29,6 +34,13 @@ func InputType(p reflect.Type) SetWrapOpt {
 		}
 		base.inputType = p
 	}
+}
+
+// InputTypeOf set input type by value
+// example: wrapper.InputTypeOf(&JsonInput{})
+func InputTypeOf(v interface{}) SetWrapOpt {
+	rv := reflect.TypeOf(v)
+	return InputType(rv)
 }
 
 func ReadFromBody() SetWrapOpt {

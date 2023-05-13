@@ -15,7 +15,10 @@ func main() {
 	ws := new(restful.WebService)
 	ws.Route(ws.POST("/json_input/{id}").To(rwrap.Wraps(JsonInputDo, wrapper.InputType(reflect.TypeOf(&JsonInput{})))))
 	restful.Add(ws)
-	http.ListenAndServe(":8080", nil)
+	err := http.ListenAndServe(":8080", nil)
+	if err != nil {
+		panic(err)
+	}
 }
 
 type JsonInput struct {
