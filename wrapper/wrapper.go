@@ -57,7 +57,7 @@ func HandleHttpInPipeline(input HandleHttpInPipelineInput) {
 		SetOrchestrator(opt.orchestrator).
 		Run(input.Handler, core.WithRunContext(dCtx))
 
-	for k, _ := range dCtx.ResponseHeader() {
+	for k := range dCtx.ResponseHeader() {
 		input.RespWriter.SetHeader(k, dCtx.ResponseHeader().Get(k))
 	}
 

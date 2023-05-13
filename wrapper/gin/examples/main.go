@@ -12,7 +12,10 @@ import (
 func main() {
 	r := gin.Default()
 	r.POST("/json_input/:id", ginwrap.Wraps(JsonInputDo, wrapper.InputType(reflect.TypeOf(&JsonInput{}))))
-	r.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
+	err := r.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
+	if err != nil {
+		panic(err)
+	}
 }
 
 type JsonInput struct {

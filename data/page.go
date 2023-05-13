@@ -41,7 +41,7 @@ type SortPair struct {
 	IsDescending bool
 }
 
-// It is google web API, please refer https://cloud.google.com/apis/design/design_patterns#list_pagination
+// BuildNextPageToken It is google web API, please refer https://cloud.google.com/apis/design/design_patterns#list_pagination
 func BuildNextPageToken(pager PagerInfo) (string, error) {
 	_, pn, _ := pager.GetPageInfo()
 	pager.SetPageNumber(pn + 1)

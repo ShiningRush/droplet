@@ -65,6 +65,14 @@ func TestPipeWork(t *testing.T) {
 	assert.Equal(t, "fo", resp)
 
 	resp, err = NewPipe(nil).
+		Run(func(ctx Context) (interface{}, error) {
+			assert.Equal(t, nil, ctx.Input())
+			return input, nil
+		})
+	assert.NoError(t, err)
+	assert.Equal(t, input, resp)
+
+	resp, err = NewPipe(nil).
 		AddIf(&firstMiddleWare{}, true).
 		AddIf(&secondMiddleWare{}, false).
 		Run(func(ctx Context) (interface{}, error) {
@@ -94,5 +102,8 @@ func TestPipeWork(t *testing.T) {
 			assert.Equal(t, nil, ctx.Input())
 			return input, nil
 		})
+
+	assert.NoError(t, err)
+	assert.Equal(t, input, resp)
 
 }
