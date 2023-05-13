@@ -8,4 +8,4 @@ require (
 	github.com/shiningrush/droplet v0.4.2
 )
 
-replace github.com/shiningrush/droplet => ../../
+//replace github.com/shiningrush/droplet => ../../
