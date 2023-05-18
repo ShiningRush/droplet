@@ -2,18 +2,89 @@ package middleware
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"reflect"
 	"testing"
 
+	"github.com/shiningrush/droplet/core"
+	"github.com/shiningrush/droplet/data"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func FixedPathFunc(key string) string {
 	return key
+}
+
+type ValidateInput struct {
+	RequiredStr string `validate:"required"`
+
+	validateErr error
+}
+
+func (input *ValidateInput) Initial(ctx core.Context) error {
+	return input.validateErr
+}
+
+func TestInputMiddleWare_inputValidate(t *testing.T) {
+	tests := []struct {
+		name      string
+		giveMw    *HttpInputMiddleware
+		giveInput interface{}
+		wantErr   error
+	}{
+		{
+			name: "normal",
+			giveMw: NewHttpInputMiddleWare(HttpInputOption{
+				ValidateErrCode: data.ErrCodeValidate,
+			}),
+			giveInput: &ValidateInput{RequiredStr: "test"},
+			wantErr:   nil,
+		},
+		{
+			name: "validate failed",
+			giveMw: NewHttpInputMiddleWare(HttpInputOption{
+				ValidateErrCode: data.ErrCodeValidate,
+			}),
+			giveInput: &ValidateInput{},
+			wantErr: &data.BaseError{
+				Code:    data.ErrCodeValidate,
+				Message: "input validate failed: Key: 'ValidateInput.RequiredStr' Error:Field validation for 'RequiredStr' failed on the 'required' tag",
+			},
+		},
+		{
+			name: "initial failed",
+			giveMw: NewHttpInputMiddleWare(HttpInputOption{
+				ValidateErrCode: data.ErrCodeInternal,
+			}),
+			giveInput: &ValidateInput{validateErr: fmt.Errorf("some err")},
+			wantErr: &data.BaseError{
+				Code:    data.ErrCodeInternal,
+				Message: "input initial failed: some err",
+			},
+		},
+		{
+			name: "custom err",
+			giveMw: NewHttpInputMiddleWare(HttpInputOption{
+				ValidateErrCode: data.ErrCodeInternal,
+			}),
+			giveInput: &ValidateInput{validateErr: data.NewConflictError("err")},
+			wantErr: &data.BaseError{
+				Code:    data.ErrCodeConflict,
+				Message: "input initial failed: err",
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			err := tc.giveMw.inputValidate(nil, tc.giveInput)
+			assert.Equal(t, tc.wantErr, err)
+		})
+	}
 }
 
 type TestInput struct {
