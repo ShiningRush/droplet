@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -15,6 +16,11 @@ import (
 	"github.com/shiningrush/droplet/data"
 )
 
+type InputHook interface {
+	// Initial will be executed after input be created, you can do some default value init or validate in here
+	Initial(ctx core.Context) error
+}
+
 // DefaultValidator use a single instance of Validate, it caches struct info
 var DefaultValidator = validator.New()
 
@@ -24,6 +30,7 @@ type HttpInputOption struct {
 	IsReadFromBody       bool
 	DisableUnmarshalBody bool
 	Codecs               []codec.Interface
+	ValidateErrCode      int
 }
 
 type HttpInputMiddleware struct {
@@ -56,27 +63,57 @@ func (mw *HttpInputMiddleware) Handle(ctx core.Context) error {
 	pInput := reflect.New(mw.opt.InputType).Interface()
 	if !mw.opt.DisableUnmarshalBody {
 		if err := mw.unmarshalFieldFromBody(pInput); err != nil {
-			return data.NewFormatError(err.Error())
+			return err
 		}
 	}
 
 	if err := mw.injectFieldFromUrlAndMap(pInput); err != nil {
-		return data.NewFormatError(err.Error())
+		return err
 	}
 
 	isRecovered, err := recoverPager(pInput)
 	if err != nil {
-		return data.NewFormatError(err.Error())
+		return err
 	}
 	if !isRecovered {
-		if err := DefaultValidator.Struct(pInput); err != nil {
-			// TODO: parse err to items
-			return data.NewValidateError(fmt.Sprintf("input validate failed: %s", err), nil)
+		if err := mw.inputValidate(ctx, pInput); err != nil {
+			return err
 		}
 	}
 
 	ctx.SetInput(pInput)
 	return mw.BaseMiddleware.Handle(ctx)
+}
+
+func (mw *HttpInputMiddleware) inputValidate(ctx core.Context, input interface{}) (err error) {
+	defer func() {
+		if err != nil {
+			be := &data.BaseError{}
+			if errors.As(err, &be) {
+				be.Message = err.Error()
+				err = be
+				return
+			}
+
+			err = &data.BaseError{
+				Code:    mw.opt.ValidateErrCode,
+				Message: err.Error(),
+			}
+			return
+		}
+	}()
+
+	if hook, ok := input.(InputHook); ok {
+		if err := hook.Initial(ctx); err != nil {
+			return fmt.Errorf("input initial failed: %w", err)
+		}
+	}
+
+	if err := DefaultValidator.Struct(input); err != nil {
+		// TODO: parse err to items
+		return fmt.Errorf("input validate failed: %s", err)
+	}
+	return
 }
 
 func (mw *HttpInputMiddleware) unmarshalFieldFromBody(ptr interface{}) error {

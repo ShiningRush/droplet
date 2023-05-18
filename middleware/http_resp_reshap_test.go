@@ -77,6 +77,17 @@ func TestHttpRespReshapeMiddleware_Handle(t *testing.T) {
 			},
 		},
 		{
+			name: "wrap error",
+			giveErr: fmt.Errorf("wraps err: %w", &data.BaseError{
+				Code:    data.ErrCodeFriendly,
+				Message: "friendly error",
+			}),
+			wantResp: &data.Response{
+				Code:    data.ErrCodeFriendly,
+				Message: "wraps err: friendly error",
+			},
+		},
+		{
 			name:     "text-resp",
 			giveResp: "test",
 			wantResp: &data.Response{

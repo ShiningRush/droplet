@@ -1,6 +1,8 @@
 package middleware
 
 import (
+	"errors"
+
 	"github.com/shiningrush/droplet/core"
 	"github.com/shiningrush/droplet/data"
 )
@@ -41,17 +43,18 @@ func (mw *HttpRespReshapeMiddleware) Handle(ctx core.Context) error {
 
 	resp.SetReqID(ctx.GetString(KeyRequestID))
 	if handlerErr != nil {
-		switch t := handlerErr.(type) {
-		case *data.BaseError:
-			resp.Set(t.Code, t.Message, t.Data)
-		default:
-			errCode := data.ErrCodeInternal
-			if mw.opt.DefaultErrCode != 0 {
-				errCode = mw.opt.DefaultErrCode
-			}
-
-			resp.Set(errCode, handlerErr.Error(), nil)
+		be := &data.BaseError{}
+		if errors.As(handlerErr, &be) {
+			resp.Set(be.Code, handlerErr.Error(), be.Data)
+			return nil
 		}
+
+		errCode := data.ErrCodeInternal
+		if mw.opt.DefaultErrCode != 0 {
+			errCode = mw.opt.DefaultErrCode
+		}
+
+		resp.Set(errCode, handlerErr.Error(), nil)
 	}
 
 	// response reshape is the last step, so we don't need to return error
