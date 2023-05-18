@@ -44,7 +44,7 @@ func HandleHttpInPipeline(input HandleHttpInPipelineInput) {
 			HeaderKeyRequestID: droplet.Option.HeaderKeyRequestID,
 		})).
 		Add(middleware.NewRespReshapeMiddleware(droplet.Option.ResponseNewFunc, middleware.HttpRespReshapeOpt{
-			DefaultErrCode: droplet.Option.DefaultErrCode,
+			DefaultErrCode: droplet.Option.ErrSetting.DefaultErrCode,
 		})).
 		Add(middleware.NewHttpInputMiddleWare(middleware.HttpInputOption{
 			PathParamsFunc:       input.PathParamsFunc,
@@ -52,6 +52,7 @@ func HandleHttpInPipeline(input HandleHttpInPipelineInput) {
 			IsReadFromBody:       opt.isReadFromBody,
 			DisableUnmarshalBody: opt.disableUnmarshalBody,
 			Codecs:               droplet.Option.Codec,
+			ValidateErrCode:      droplet.Option.ErrSetting.ValidateErrCode,
 		})).
 		Add(middleware.NewTrafficLogMiddleware(trafficOpt)).
 		SetOrchestrator(opt.orchestrator).

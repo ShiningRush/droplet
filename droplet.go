@@ -27,6 +27,10 @@ var (
 			&codec.MultipartForm{},
 			&codec.Empty{},
 		},
+		ErrSetting: ErrSetting{
+			DefaultErrCode:  data.ErrCodeInternal,
+			ValidateErrCode: data.ErrCodeValidate,
+		},
 	}
 )
 
@@ -36,5 +40,22 @@ type GlobalOpt struct {
 	Orchestrator       core.Orchestrator
 	Codec              []codec.Interface
 	TrafficLogOpt      *middleware.TrafficLogOpt
-	DefaultErrCode     int
+	ErrSetting         ErrSetting
+}
+
+type ErrSetting struct {
+	DefaultErrCode  int
+	ValidateErrCode int
+}
+
+func AppendCodec(code codec.Interface) {
+	Option.Codec = append(Option.Codec, code)
+}
+
+func WithDefaultErrCode(code int) {
+	Option.ErrSetting.DefaultErrCode = code
+}
+
+func WithValidateErrCode(code int) {
+	Option.ErrSetting.ValidateErrCode = code
 }
