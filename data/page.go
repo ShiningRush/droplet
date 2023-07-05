@@ -21,8 +21,11 @@ type SortAble struct {
 	OrderBy string `json:"order_by" form:"order_by" auto_read:"order_by"`
 }
 
-func (s *SortAble) GetSortInfo() []*SortPair {
-	var paris []*SortPair
+func (s *SortAble) GetSortInfo() (paris []*SortPair) {
+	if s.OrderBy == "" {
+		return
+	}
+
 	sortFields := strings.Split(s.OrderBy, ",")
 	for _, aField := range sortFields {
 		nameAndDesc := strings.Split(strings.TrimSpace(aField), " ")
@@ -33,7 +36,7 @@ func (s *SortAble) GetSortInfo() []*SortPair {
 		paris = append(paris, p)
 	}
 
-	return paris
+	return
 }
 
 type SortPair struct {
