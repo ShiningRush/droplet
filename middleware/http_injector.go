@@ -24,7 +24,9 @@ func (mw *HttpInfoInjectorMiddleware) Handle(ctx core.Context) error {
 	req := mw.opt.ReqFunc()
 
 	ctx.Set(KeyHttpRequest, req)
-	ctx.Set(KeyRequestID, req.Header.Get(mw.opt.HeaderKeyRequestID))
+	if ctx.Get(KeyRequestID) == nil {
+		ctx.Set(KeyRequestID, req.Header.Get(mw.opt.HeaderKeyRequestID))
+	}
 	ctx.SetPath(req.URL.Path)
 
 	return mw.BaseMiddleware.Handle(ctx)
