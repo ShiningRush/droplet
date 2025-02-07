@@ -93,6 +93,8 @@ type TestInput struct {
 	HeaderInt     int     `auto_read:"header-int,header"`
 	DefaultIntPtr *int    `auto_read:"query_int"`
 	PathStrPtr    *string `auto_read:"path_str,path"`
+	CookieStrPtr  *string `auto_read:"cookie_str,cookie"`
+	MixedStrPtr   *string `auto_read:"mixed, query|header|cookie"`
 	Body          []byte  `auto_read:"@body"`
 }
 
@@ -116,10 +118,12 @@ func TestInputMiddleWare_injectFieldFromUrlAndMap(t *testing.T) {
 					IsReadFromBody: true,
 				},
 				req: &http.Request{
-					URL:    &url.URL{RawQuery: "query_str=query_string&test=2"},
+					URL:    &url.URL{RawQuery: "query_str=query_string&test=2&mixed=query"},
 					Method: http.MethodPost,
 					Header: map[string][]string{
 						"Header-Int": {"10"},
+						"Cookie":     {"cookie_str=c_str;mixed=cookie"},
+						"Mixed":      {"header"},
 					},
 					Body: io.NopCloser(bytes.NewBufferString("all body")),
 				},
@@ -131,7 +135,70 @@ func TestInputMiddleWare_injectFieldFromUrlAndMap(t *testing.T) {
 				HeaderInt:     10,
 				DefaultIntPtr: nil,
 				PathStrPtr:    strPtr("path_str"),
+				CookieStrPtr:  strPtr("c_str"),
 				Body:          []byte("all body"),
+				MixedStrPtr:   strPtr("query"),
+			},
+			wantErr: require.NoError,
+		},
+		{
+			name: "mixed-header",
+			giveMw: &HttpInputMiddleware{
+				opt: HttpInputOption{
+					PathParamsFunc: FixedPathFunc,
+					IsReadFromBody: true,
+				},
+				req: &http.Request{
+					URL:    &url.URL{RawQuery: "query_str=query_string&test=2"},
+					Method: http.MethodPost,
+					Header: map[string][]string{
+						"Header-Int": {"10"},
+						"Cookie":     {"cookie_str=c_str;mixed=cookie"},
+						"Mixed":      {"header"},
+					},
+					Body: io.NopCloser(bytes.NewBufferString("all body")),
+				},
+				searchMap: nil,
+			},
+			givePtr: &TestInput{},
+			wantPtr: &TestInput{
+				QueryString:   "query_string",
+				HeaderInt:     10,
+				DefaultIntPtr: nil,
+				PathStrPtr:    strPtr("path_str"),
+				CookieStrPtr:  strPtr("c_str"),
+				Body:          []byte("all body"),
+				MixedStrPtr:   strPtr("header"),
+			},
+			wantErr: require.NoError,
+		},
+		{
+			name: "mixed-cookie",
+			giveMw: &HttpInputMiddleware{
+				opt: HttpInputOption{
+					PathParamsFunc: FixedPathFunc,
+					IsReadFromBody: true,
+				},
+				req: &http.Request{
+					URL:    &url.URL{RawQuery: "query_str=query_string&test=2"},
+					Method: http.MethodPost,
+					Header: map[string][]string{
+						"Header-Int": {"10"},
+						"Cookie":     {"cookie_str=c_str;mixed=cookie"},
+					},
+					Body: io.NopCloser(bytes.NewBufferString("all body")),
+				},
+				searchMap: nil,
+			},
+			givePtr: &TestInput{},
+			wantPtr: &TestInput{
+				QueryString:   "query_string",
+				HeaderInt:     10,
+				DefaultIntPtr: nil,
+				PathStrPtr:    strPtr("path_str"),
+				CookieStrPtr:  strPtr("c_str"),
+				Body:          []byte("all body"),
+				MixedStrPtr:   strPtr("cookie"),
 			},
 			wantErr: require.NoError,
 		},
