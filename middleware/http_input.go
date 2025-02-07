@@ -161,52 +161,74 @@ func (mw *HttpInputMiddleware) injectFieldFromUrlAndMap(ptr interface{}) error {
 		}
 
 		src, name := getSourceWayAndName(elType.Field(i))
-		if src == "" && mw.opt.IsReadFromBody {
-			if mw.searchMap != nil {
-				if v, ok := mw.searchMap[name]; ok {
-					if input.Field(i).Kind() == reflect.String {
-						input.Field(i).Set(reflect.ValueOf(string(v)))
-					} else if input.Field(i).Kind() == reflect.Slice {
-						input.Field(i).Set(reflect.ValueOf(v))
-					}
-				}
+		sources := strings.Split(src, "|")
+		for _, v := range sources {
+			findVal, err := mw.searchVal(v, name, input.Field(i))
+			if err != nil {
+				return fmt.Errorf("source %s[%s] read failed: %w", name, src, err)
 			}
-			if name == "@body" {
-				if input.Field(i).Type().Implements(reflect.TypeOf((*io.ReadCloser)(nil)).Elem()) {
-					input.Field(i).Set(reflect.ValueOf(mw.req.Body))
-					continue
-				}
-
-				bs, err := data.CopyBody(mw.req)
-				if err != nil {
-					return err
-				}
-				input.Field(i).Set(reflect.ValueOf(bs))
+			if findVal {
+				break
 			}
-			continue
 		}
-
-		val := ""
-		switch src {
-		case "path":
-			val = mw.opt.PathParamsFunc(name)
-		case "header":
-			val = mw.req.Header.Get(name)
-		default:
-			val = mw.req.FormValue(name)
-		}
-
-		tarVal, err := changeToFieldKind(val, input.Field(i).Type())
-		if err != nil {
-			return err
-		}
-		if tarVal == nil {
-			continue
-		}
-		input.Field(i).Set(reflect.ValueOf(tarVal))
 	}
 
 	return nil
+}
+
+func (mw *HttpInputMiddleware) searchVal(src, name string, field reflect.Value) (findVal bool, err error) {
+	if src == "" && mw.opt.IsReadFromBody {
+		if mw.searchMap != nil {
+			if v, ok := mw.searchMap[name]; ok {
+				if field.Kind() == reflect.String {
+					field.Set(reflect.ValueOf(string(v)))
+					return true, nil
+				} else if field.Kind() == reflect.Slice {
+					field.Set(reflect.ValueOf(v))
+					return true, nil
+				}
+			}
+		}
+		if name == "@body" {
+			if field.Type().Implements(reflect.TypeOf((*io.ReadCloser)(nil)).Elem()) {
+				field.Set(reflect.ValueOf(mw.req.Body))
+				return true, nil
+			}
+
+			bs, err := data.CopyBody(mw.req)
+			if err != nil {
+				return false, fmt.Errorf("read body failed: %w", err)
+			}
+			field.Set(reflect.ValueOf(bs))
+		}
+		return false, nil
+	}
+
+	val := ""
+	switch src {
+	case "path":
+		val = mw.opt.PathParamsFunc(name)
+	case "header":
+		val = mw.req.Header.Get(name)
+	case "cookie":
+		ck, err := mw.req.Cookie(name)
+		if err != nil && errors.Is(err, http.ErrNoCookie) {
+			return false, nil
+		}
+		val = ck.Value
+	default:
+		val = mw.req.FormValue(name)
+	}
+
+	tarVal, err := changeToFieldKind(val, field.Type())
+	if err != nil {
+		return false, fmt.Errorf("field[%s] covert failed: %w", name, err)
+	}
+	if tarVal == nil {
+		return false, nil
+	}
+	field.Set(reflect.ValueOf(tarVal))
+	return true, nil
 }
 
 func recoverPager(pInput interface{}) (bool, error) {
@@ -334,5 +356,5 @@ func changeToFieldKind(str string, t reflect.Type) (interface{}, error) {
 		return i, nil
 	}
 
-	return nil, fmt.Errorf("unsupport type: %s", kind.String())
+	return nil, fmt.Errorf("unsupport convert type: %s", kind.String())
 }
