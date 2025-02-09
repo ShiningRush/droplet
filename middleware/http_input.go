@@ -227,6 +227,10 @@ func (mw *HttpInputMiddleware) searchVal(src, name string, field reflect.Value) 
 	if tarVal == nil {
 		return false, nil
 	}
+	if reflect.ValueOf(tarVal).IsZero() {
+		return false, nil
+	}
+
 	field.Set(reflect.ValueOf(tarVal))
 	return true, nil
 }
