@@ -95,6 +95,7 @@ type TestInput struct {
 	PathStrPtr    *string `auto_read:"path_str,path"`
 	CookieStrPtr  *string `auto_read:"cookie_str,cookie"`
 	MixedStrPtr   *string `auto_read:"mixed, query|header|cookie"`
+	MixedStr      string  `auto_read:"mixed_str, query|header|cookie"`
 	Body          []byte  `auto_read:"@body"`
 }
 
@@ -118,7 +119,7 @@ func TestInputMiddleWare_injectFieldFromUrlAndMap(t *testing.T) {
 					IsReadFromBody: true,
 				},
 				req: &http.Request{
-					URL:    &url.URL{RawQuery: "query_str=query_string&test=2&mixed=query"},
+					URL:    &url.URL{RawQuery: "query_str=query_string&test=2&mixed=query&mixed_str=query_str"},
 					Method: http.MethodPost,
 					Header: map[string][]string{
 						"Header-Int": {"10"},
@@ -138,6 +139,7 @@ func TestInputMiddleWare_injectFieldFromUrlAndMap(t *testing.T) {
 				CookieStrPtr:  strPtr("c_str"),
 				Body:          []byte("all body"),
 				MixedStrPtr:   strPtr("query"),
+				MixedStr:      "query_str",
 			},
 			wantErr: require.NoError,
 		},
@@ -155,6 +157,7 @@ func TestInputMiddleWare_injectFieldFromUrlAndMap(t *testing.T) {
 						"Header-Int": {"10"},
 						"Cookie":     {"cookie_str=c_str;mixed=cookie"},
 						"Mixed":      {"header"},
+						"Mixed_str":  {"header_str"},
 					},
 					Body: io.NopCloser(bytes.NewBufferString("all body")),
 				},
@@ -169,6 +172,7 @@ func TestInputMiddleWare_injectFieldFromUrlAndMap(t *testing.T) {
 				CookieStrPtr:  strPtr("c_str"),
 				Body:          []byte("all body"),
 				MixedStrPtr:   strPtr("header"),
+				MixedStr:      "header_str",
 			},
 			wantErr: require.NoError,
 		},
@@ -184,7 +188,7 @@ func TestInputMiddleWare_injectFieldFromUrlAndMap(t *testing.T) {
 					Method: http.MethodPost,
 					Header: map[string][]string{
 						"Header-Int": {"10"},
-						"Cookie":     {"cookie_str=c_str;mixed=cookie"},
+						"Cookie":     {"cookie_str=c_str;mixed=cookie;mixed_str=cookie_str"},
 					},
 					Body: io.NopCloser(bytes.NewBufferString("all body")),
 				},
@@ -199,6 +203,7 @@ func TestInputMiddleWare_injectFieldFromUrlAndMap(t *testing.T) {
 				CookieStrPtr:  strPtr("c_str"),
 				Body:          []byte("all body"),
 				MixedStrPtr:   strPtr("cookie"),
+				MixedStr:      "cookie_str",
 			},
 			wantErr: require.NoError,
 		},
