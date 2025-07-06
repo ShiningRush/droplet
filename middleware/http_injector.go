@@ -1,7 +1,10 @@
 package middleware
 
 import (
+	"fmt"
+	"math/rand"
 	"net/http"
+	"time"
 
 	"github.com/shiningrush/droplet/core"
 )
@@ -25,7 +28,11 @@ func (mw *HttpInfoInjectorMiddleware) Handle(ctx core.Context) error {
 
 	ctx.Set(KeyHttpRequest, req)
 	if ctx.Get(KeyRequestID) == nil {
-		ctx.Set(KeyRequestID, req.Header.Get(mw.opt.HeaderKeyRequestID))
+		reqId := req.Header.Get(mw.opt.HeaderKeyRequestID)
+		if reqId == "" {
+			reqId = fmt.Sprintf("%s%v", time.Now().Format("20060102150405"), rand.Intn(100000))
+		}
+		ctx.Set(KeyRequestID, reqId)
 	}
 	ctx.SetPath(req.URL.Path)
 
