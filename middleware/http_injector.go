@@ -30,7 +30,7 @@ func (mw *HttpInfoInjectorMiddleware) Handle(ctx core.Context) error {
 	if ctx.Get(KeyRequestID) == nil {
 		reqId := req.Header.Get(mw.opt.HeaderKeyRequestID)
 		if reqId == "" {
-			reqId = fmt.Sprintf("%s%v", time.Now().Format("20060102150405"), rand.Intn(100000))
+			reqId = fmt.Sprintf("%s%v", time.Now().Local().Format("20060102150405"), rand.Intn(100000))
 		}
 		ctx.Set(KeyRequestID, reqId)
 	}

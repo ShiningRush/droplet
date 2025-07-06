@@ -18,13 +18,14 @@ func TestNewHttpInfoInjectorMiddleware(t *testing.T) {
 		{
 			giveCtx: core.NewContext(),
 			giveOpt: HttpInfoInjectorOption{
+				HeaderKeyRequestID: "X-Request-Id",
 				ReqFunc: func() *http.Request {
 					return &http.Request{
 						URL: &url.URL{
 							Path: "path",
 						},
 						Header: http.Header{
-							"X-Request-ID": []string{"reqId"},
+							"X-Request-Id": []string{"reqId"},
 						},
 					}
 				},

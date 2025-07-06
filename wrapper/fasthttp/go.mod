@@ -1,6 +1,8 @@
 module github.com/shiningrush/droplet/wrapper/fasthttp
 
-go 1.17
+go 1.23.0
+
+toolchain go1.24.3
 
 require (
 	github.com/fasthttp/router v1.4.11
