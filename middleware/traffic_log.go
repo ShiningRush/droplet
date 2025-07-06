@@ -4,7 +4,9 @@ package middleware
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/shiningrush/droplet/core"
@@ -59,39 +61,62 @@ type defaultTrafficLogger struct {
 }
 
 func (l *defaultTrafficLogger) LogRequest(tr *RequestTrafficLog) {
-	fields := []interface{}{
-		"request_id", tr.RequestID,
-		"path", tr.Path,
-		"method", tr.Method,
+	fields := []string{
+		"request_id",
+		"path",
+		"method",
+	}
+	values := []any{
+		tr.RequestID,
+		tr.Path,
+		tr.Method,
 	}
 	if tr.Input != nil {
+		fields = append(fields, "input")
 		input, _ := json.Marshal(tr.Input)
-		fields = append(fields, []interface{}{
-			"input", string(input),
-		}...)
+		values = append(values, string(input))
 	}
-	log.CtxInfo(tr.Context, "request start", fields...)
+
+	pFmt := strings.Builder{}
+	pFmt.WriteString("request start, ")
+	for _, field := range fields {
+		pFmt.WriteString(fmt.Sprintf("%s: %%v, ", field))
+	}
+
+	log.CtxInfof(tr.Context, pFmt.String(), values...)
 }
 
 func (l *defaultTrafficLogger) LogResponse(tr *ResponseTrafficLog) {
-	fields := []interface{}{
-		"request_id", tr.RequestID,
-		"path", tr.Path,
-		"method", tr.Method,
-		"elapsed_time", tr.ElapsedTime,
+	fields := []string{
+		"request_id",
+		"path",
+		"method",
+		"elapsed_time",
 	}
+	values := []any{
+		tr.RequestID,
+		tr.Path,
+		tr.Method,
+		tr.ElapsedTime,
+	}
+
 	if tr.Error != nil {
-		fields = append(fields, []interface{}{
-			"err", tr.Error,
-		}...)
+		fields = append(fields, "err")
+		values = append(values, tr.Error)
 	}
 	if tr.Output != nil {
+		fields = append(fields, "output")
 		output, _ := json.Marshal(tr.Output)
-		fields = append(fields, []interface{}{
-			"output", string(output),
-		}...)
+		values = append(values, output)
 	}
-	log.CtxInfo(tr.Context, "request complete", fields...)
+
+	pFmt := strings.Builder{}
+	pFmt.WriteString("request complete, ")
+	for _, field := range fields {
+		pFmt.WriteString(fmt.Sprintf("%s: %%v, ", field))
+	}
+
+	log.CtxInfof(tr.Context, pFmt.String(), values...)
 }
 
 func (mw *TrafficLogMiddleware) Handle(ctx core.Context) error {

@@ -123,9 +123,7 @@ func writeFileResp(input HandleHttpInPipelineInput, fr data.HttpFileResponse) {
 }
 
 func logWriteErrors(req *http.Request, err error) {
-	log.Error("write resp failed",
-		"err", err,
-		"url", req.URL.String())
+	log.Errorf("write resp failed,url: %s, err: %v", req.URL.String(), err)
 }
 
 func writeJsonToResp(rw data.ResponseWriter, code int, data interface{}) error {

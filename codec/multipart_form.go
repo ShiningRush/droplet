@@ -3,10 +3,11 @@ package codec
 import (
 	"bytes"
 	"fmt"
-	"github.com/shiningrush/droplet/data"
 	"io"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/shiningrush/droplet/data"
 )
 
 type MultipartForm struct {
