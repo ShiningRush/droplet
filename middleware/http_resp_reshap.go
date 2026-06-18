@@ -49,6 +49,12 @@ func (mw *HttpRespReshapeMiddleware) Handle(ctx core.Context) error {
 			return nil
 		}
 
+		var cErr data.CodedError
+		if errors.As(handlerErr, &cErr) {
+			resp.Set(cErr.ErrorCode(), handlerErr.Error(), data.ErrorData(handlerErr))
+			return nil
+		}
+
 		errCode := data.ErrCodeInternal
 		if mw.opt.DefaultErrCode != 0 {
 			errCode = mw.opt.DefaultErrCode

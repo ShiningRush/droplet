@@ -282,6 +282,24 @@ func main() {
 > 2. 通过 Orchestrator 方式，用户还可以任意操作已添加的中间件，比如移除一些不必要的中间件，这是权重的方式无法做到的。
 > 3. 当然如果以后有需要，现在的设计并不妨碍我们支持基于权重的方式
 
+## 开发与测试
+日常开发时可以直接运行仓库内置测试：
+```bash
+make test
+```
+
+如果需要验证 Droplet 与真实 `core-go` 错误体系的兼容性，可以执行：
+```bash
+make test-compat-corego
+```
+
+默认会拉取远程 `core-go` 的 `master` 分支进行验证。如果你需要针对本地 `core-go` 工作区联调，也可以显式指定：
+```bash
+make test-compat-corego CORE_GO_DIR=../core-go
+```
+
+该命令会在临时目录中生成测试模块。默认情况下会直接在该模块内引用远程 `core-go@master`；如果显式传入 `CORE_GO_DIR`，则改为引用本地 `core-go` 工作区。两种模式下都会直接引用当前 Droplet 工作区，验证诸如 `datax.NewValidationError`、`datax.WithErrorData` 这类真实错误能否被 Droplet 识别并整形成响应 wrapper。
+
 ## 小结
 正如文中所说，Droplet 的核心目标是 **提供位于应用层的、pipeline 形式的请求处理能力**，并以此为基础提供了一些开箱即用的中间件。
 它对项目带来的收益总结为几点：

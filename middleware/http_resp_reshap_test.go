@@ -11,6 +11,43 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+type codedTestError struct {
+	code    int
+	message string
+	cause   error
+}
+
+func (e *codedTestError) Error() string {
+	if e.cause != nil {
+		return fmt.Sprintf("%s: %v", e.message, e.cause)
+	}
+	return e.message
+}
+
+func (e *codedTestError) Unwrap() error {
+	return e.cause
+}
+
+func (e *codedTestError) ErrorCode() int {
+	return e.code
+}
+
+type extraDataTestError struct {
+	Cause error
+	Data  interface{}
+}
+
+func (e *extraDataTestError) Error() string {
+	if e.Cause != nil {
+		return e.Cause.Error()
+	}
+	return "error with extra data"
+}
+
+func (e *extraDataTestError) Unwrap() error {
+	return e.Cause
+}
+
 func TestHttpRespReshapeMiddleware_Handle(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -85,6 +122,32 @@ func TestHttpRespReshapeMiddleware_Handle(t *testing.T) {
 			wantResp: &data.Response{
 				Code:    data.ErrCodeFriendly,
 				Message: "wraps err: friendly error",
+			},
+		},
+		{
+			name: "coded-error",
+			giveErr: fmt.Errorf("wraps err: %w", &codedTestError{
+				code:    20001,
+				message: "validation failed",
+			}),
+			wantResp: &data.Response{
+				Code:    20001,
+				Message: "wraps err: validation failed",
+			},
+		},
+		{
+			name: "coded-error-data",
+			giveErr: &extraDataTestError{
+				Cause: &codedTestError{
+					code:    20001,
+					message: "validation failed",
+				},
+				Data: map[string]string{"field": "tenant_id"},
+			},
+			wantResp: &data.Response{
+				Code:    20001,
+				Message: "validation failed",
+				Data:    map[string]string{"field": "tenant_id"},
 			},
 		},
 		{

@@ -1,6 +1,8 @@
 WRAPPER_SUBMODULES := fasthttp gin gorestful
 PWD := $(shell pwd)
 DIR :=
+COMPAT_COREGO_TEST := $(PWD)/compat/corego/corego_compat_test.go
+CORE_GO_REF ?= master
 
 # must ensure your go version >= 1.16
 .PHONY: install
@@ -27,3 +29,24 @@ tidy:
 test:
 	go test ./...
 	$(foreach var,$(WRAPPER_SUBMODULES),cd $(PWD)/wrapper/$(var) && go test ./...;)
+
+.PHONY: test-compat-corego
+test-compat-corego:
+	@droplet_dir=$$(cd "$(PWD)" && pwd); \
+	tmpdir=$$(mktemp -d); \
+	trap 'rm -rf "$$tmpdir"' EXIT; \
+	cp "$(COMPAT_COREGO_TEST)" "$$tmpdir/corego_compat_test.go"; \
+	printf '%s\n' \
+		'module corego_compat_check' \
+		'' \
+		'go 1.24.3' \
+		'' \
+		"replace github.com/shiningrush/droplet => $$droplet_dir" \
+		> "$$tmpdir/go.mod"; \
+	if [ -n "$(CORE_GO_DIR)" ]; then \
+		core_go_dir=$$(cd "$(CORE_GO_DIR)" && pwd); \
+		printf '%s\n' "replace github.com/dev-ofa/core-go => $$core_go_dir" >> "$$tmpdir/go.mod"; \
+		cd "$$tmpdir" && go mod tidy && go test -tags compat_corego ./...; \
+	else \
+		cd "$$tmpdir" && go get github.com/dev-ofa/core-go@$(CORE_GO_REF) && go mod tidy && go test -tags compat_corego ./...; \
+	fi

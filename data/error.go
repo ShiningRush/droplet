@@ -3,6 +3,7 @@ package data
 import (
 	"errors"
 	"fmt"
+	"reflect"
 )
 
 const (
@@ -41,6 +42,10 @@ func (e *BaseError) Is(err error) bool {
 	return IsErrCode(e.Code, err)
 }
 
+func (e *BaseError) ErrorCode() int {
+	return e.Code
+}
+
 type ErrWrapper struct {
 	Code int
 	Msg  string
@@ -53,6 +58,10 @@ func (e *ErrWrapper) Error() string {
 	}
 
 	return fmt.Sprintf("wrapper validate failed, code: [%d], msg : [%s]", e.Code, e.Msg)
+}
+
+func (e *ErrWrapper) ErrorCode() int {
+	return e.Code
 }
 
 type ErrHttp struct {
@@ -141,6 +150,11 @@ type ValidateErrItem struct {
 	Detail    interface{} `json:"detail"`
 }
 
+type CodedError interface {
+	error
+	ErrorCode() int
+}
+
 func IsErrCode(code int, err error) bool {
 	if err == nil {
 		return false
@@ -164,5 +178,71 @@ func IsErrCode(code int, err error) bool {
 		return bErr.Code == code
 	}
 
+	var cErr CodedError
+	if errors.As(err, &cErr) {
+		return cErr.ErrorCode() == code
+	}
+
 	return false
+}
+
+func CodeOf(err error) int {
+	if err == nil {
+		return 0
+	}
+
+	var cErr CodedError
+	if errors.As(err, &cErr) && cErr.ErrorCode() != 0 {
+		return cErr.ErrorCode()
+	}
+
+	return ErrCodeInternal
+}
+
+func ErrorData(err error) interface{} {
+	for err != nil {
+		if data, ok := errorDataOf(err); ok {
+			return data
+		}
+
+		unwrapped, ok := err.(interface {
+			Unwrap() error
+		})
+		if !ok {
+			return nil
+		}
+		err = unwrapped.Unwrap()
+	}
+	return nil
+}
+
+func errorDataOf(err error) (interface{}, bool) {
+	switch t := err.(type) {
+	case *BaseError:
+		return t.Data, t.Data != nil
+	case *ErrWrapper:
+		return t.Data, t.Data != nil
+	}
+
+	v := reflect.ValueOf(err)
+	if !v.IsValid() {
+		return nil, false
+	}
+	if v.Kind() == reflect.Pointer {
+		if v.IsNil() {
+			return nil, false
+		}
+		v = v.Elem()
+	}
+	if v.Kind() != reflect.Struct {
+		return nil, false
+	}
+
+	field := v.FieldByName("Data")
+	if !field.IsValid() || !field.CanInterface() {
+		return nil, false
+	}
+
+	data := field.Interface()
+	return data, data != nil
 }
