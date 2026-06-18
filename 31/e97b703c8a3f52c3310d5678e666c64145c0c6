@@ -1,0 +1,39 @@
+Makefile
+  s_8e0e9b56c64c1e::t_bdac419078046c 5,35
+  s_8e0e9b56c64c1e::t_2549d7b1f4310d 4,31-34,36-38
+  s_8e0e9b56c64c1e::t_e00b531c5571d5 39-45
+  s_8e0e9b56c64c1e::t_05440c3d410d1c 46-52
+data/error.go
+  s_8e0e9b56c64c1e::t_d62ee1d00cf7ee 6,45-48,63-66,153-157,181-185,188-247
+data/error_test.go
+  s_8e0e9b56c64c1e::t_b492a9120cd818 1-88
+compat/corego/corego_compat_test.go
+  s_8e0e9b56c64c1e::t_b800a0fc0acec6 1-3
+  s_8e0e9b56c64c1e::t_2d55e7ef753311 4-90
+middleware/http_resp_reshap_test.go
+  s_8e0e9b56c64c1e::t_bee500e4e6b09b 14-50,127-151
+README.md
+  s_8e0e9b56c64c1e::t_de242b2571f183 285-292,298-300,302
+  s_8e0e9b56c64c1e::t_7fcb282acbbed9 293-297
+  s_8e0e9b56c64c1e::t_d3fa53f2bf0264 301
+middleware/http_resp_reshap.go
+  s_8e0e9b56c64c1e::t_f363a13abeb88f 52-57
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "31e97b703c8a3f52c3310d5678e666c64145c0c6",
+  "prompts": {},
+  "sessions": {
+    "s_8e0e9b56c64c1e": {
+      "agent_id": {
+        "tool": "trae",
+        "id": "6a2ea55bada3f41e8c6e5369",
+        "model": "gpt-5.4__dev"
+      },
+      "human_author": "xuxin.vinci <xuxin.vinci@bytedance.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
