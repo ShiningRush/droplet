@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/shiningrush/droplet/core"
+	"github.com/shiningrush/droplet/data"
 	"github.com/shiningrush/droplet/log"
 )
 
@@ -116,7 +117,46 @@ func (l *defaultTrafficLogger) LogResponse(tr *ResponseTrafficLog) {
 		pFmt.WriteString(fmt.Sprintf("%s: %%v, ", field))
 	}
 
+	if tr.Error != nil {
+		l.logFailedRequest(tr)
+	}
 	log.CtxInfof(tr.Context, pFmt.String(), values...)
+}
+
+func (l *defaultTrafficLogger) logFailedRequest(tr *ResponseTrafficLog) {
+	code := data.CodeOf(tr.Error)
+	fields := []string{
+		"request_id",
+		"path",
+		"method",
+		"elapsed_time",
+		"code",
+		"err",
+	}
+	values := []any{
+		tr.RequestID,
+		tr.Path,
+		tr.Method,
+		tr.ElapsedTime,
+		code,
+		tr.Error,
+	}
+
+	pFmt := strings.Builder{}
+	pFmt.WriteString("request failed, ")
+	for _, field := range fields {
+		pFmt.WriteString(fmt.Sprintf("%s: %%v, ", field))
+	}
+
+	if isWarnErrorCode(code) {
+		log.CtxWarnf(tr.Context, pFmt.String(), values...)
+		return
+	}
+	log.CtxErrorf(tr.Context, pFmt.String(), values...)
+}
+
+func isWarnErrorCode(code int) bool {
+	return code != 0 && code != data.ErrCodeInternal
 }
 
 func (mw *TrafficLogMiddleware) Handle(ctx core.Context) error {

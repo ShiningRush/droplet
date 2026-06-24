@@ -1,13 +1,18 @@
 package middleware
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/shiningrush/droplet/core"
+	"github.com/shiningrush/droplet/data"
+	"github.com/shiningrush/droplet/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -94,9 +99,150 @@ func TestTrafficLogMiddleware_Handle(t *testing.T) {
 				assert.Equal(t, tc.wantRespLog, respLog)
 			})
 
+			oldDefaultLogger := defaultLogger
 			defaultLogger = ml
+			defer func() {
+				defaultLogger = oldDefaultLogger
+			}()
 			err := testMw.Handle(c)
 			assert.Equal(t, tc.wantRespLog.Error, err)
 		})
 	}
+}
+
+func TestDefaultTrafficLogger_LogResponseLogsFailedRequestLevel(t *testing.T) {
+	tests := []struct {
+		name      string
+		err       error
+		wantLevel string
+		wantCode  int
+	}{
+		{
+			name:      "validate error logs warn",
+			err:       data.NewValidateError("invalid request", nil),
+			wantLevel: "warn",
+			wantCode:  data.ErrCodeValidate,
+		},
+		{
+			name:      "friendly error logs warn",
+			err:       data.NewFriendlyError("friendly error"),
+			wantLevel: "warn",
+			wantCode:  data.ErrCodeFriendly,
+		},
+		{
+			name: "custom coded error logs warn",
+			err: &codedTestError{
+				code:    20001,
+				message: "business error",
+			},
+			wantLevel: "warn",
+			wantCode:  20001,
+		},
+		{
+			name:      "internal error logs error",
+			err:       data.NewInternalError("internal error"),
+			wantLevel: "error",
+			wantCode:  data.ErrCodeInternal,
+		},
+		{
+			name:      "plain error logs error",
+			err:       errors.New("plain error"),
+			wantLevel: "error",
+			wantCode:  data.ErrCodeInternal,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			logger := &captureLogger{}
+			oldLogger := log.DefLogger
+			log.DefLogger = logger
+			defer func() {
+				log.DefLogger = oldLogger
+			}()
+
+			(&defaultTrafficLogger{}).LogResponse(&ResponseTrafficLog{
+				Context:     contextWithRequestID(t, "req"),
+				RequestID:   "req",
+				Path:        "/path",
+				Method:      http.MethodGet,
+				ElapsedTime: 10,
+				Error:       tc.err,
+			})
+
+			assert.Len(t, logger.entries, 2)
+			assert.Equal(t, tc.wantLevel, logger.entries[0].level)
+			assert.True(t, strings.HasPrefix(logger.entries[0].msg, "request failed, "))
+			assert.Contains(t, logger.entries[0].args, tc.wantCode)
+			assert.Contains(t, logger.entries[0].args, tc.err)
+			assert.Equal(t, "info", logger.entries[1].level)
+			assert.True(t, strings.HasPrefix(logger.entries[1].msg, "request complete, "))
+		})
+	}
+}
+
+func contextWithRequestID(t *testing.T, requestID string) context.Context {
+	t.Helper()
+
+	c := core.NewContext()
+	c.Set(KeyRequestID, requestID)
+	return c.Context()
+}
+
+type logEntry struct {
+	level string
+	msg   string
+	args  []interface{}
+}
+
+type captureLogger struct {
+	entries []logEntry
+}
+
+func (l *captureLogger) append(level string, msg string, args ...interface{}) {
+	l.entries = append(l.entries, logEntry{
+		level: level,
+		msg:   msg,
+		args:  args,
+	})
+}
+
+func (l *captureLogger) CtxDebugf(ctx context.Context, msg string, args ...interface{}) {
+	l.append("debug", msg, args...)
+}
+
+func (l *captureLogger) CtxInfof(ctx context.Context, msg string, args ...interface{}) {
+	l.append("info", msg, args...)
+}
+
+func (l *captureLogger) CtxWarnf(ctx context.Context, msg string, args ...interface{}) {
+	l.append("warn", msg, args...)
+}
+
+func (l *captureLogger) CtxErrorf(ctx context.Context, msg string, args ...interface{}) {
+	l.append("error", msg, args...)
+}
+
+func (l *captureLogger) CtxFatalf(ctx context.Context, msg string, args ...interface{}) {
+	l.append("fatal", msg, args...)
+}
+
+func (l *captureLogger) Debugf(msg string, args ...interface{}) {
+	l.append("debug", msg, args...)
+}
+
+func (l *captureLogger) Infof(msg string, args ...interface{}) {
+	l.append("info", msg, args...)
+}
+
+func (l *captureLogger) Warnf(msg string, args ...interface{}) {
+	l.append("warn", msg, args...)
+}
+
+func (l *captureLogger) Errorf(msg string, args ...interface{}) {
+	l.append("error", msg, args...)
+}
+
+func (l *captureLogger) Fatalf(msg string, args ...interface{}) {
+	l.append("fatal", msg, args...)
 }
