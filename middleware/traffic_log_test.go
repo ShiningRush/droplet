@@ -181,6 +181,45 @@ func TestDefaultTrafficLogger_LogResponseLogsFailedRequestLevel(t *testing.T) {
 	}
 }
 
+func TestTrafficLogMiddlewareUsesElapsedTimeForServerTiming(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mMw := &core.MockMiddleware{}
+	mMw.On("Handle", mock.Anything).Run(func(args mock.Arguments) {
+		time.Sleep(10 * time.Millisecond)
+	}).Return(nil)
+
+	var capturedRespLog *ResponseTrafficLog
+	ml := NewMockTrafficLogger(ctrl)
+	ml.EXPECT().LogRequest(gomock.Any())
+	ml.EXPECT().LogResponse(gomock.Any()).Do(func(respLog interface{}) {
+		capturedRespLog = respLog.(*ResponseTrafficLog)
+	})
+
+	testMw := TrafficLogMiddleware{
+		opt: &TrafficLogOpt{
+			Logger: ml,
+		},
+		BaseMiddleware: BaseMiddleware{
+			next: mMw,
+		},
+	}
+
+	c := core.NewContext()
+	c.SetPath("path")
+	c.Set(KeyHttpRequest, &http.Request{
+		Method: http.MethodGet,
+	})
+	c.Set(KeyRequestID, "req")
+
+	err := testMw.Handle(c)
+	assert.NoError(t, err)
+	if assert.NotNil(t, capturedRespLog) {
+		assert.Equal(t, formatServerTiming(time.Duration(capturedRespLog.ElapsedTime)*time.Millisecond), c.ResponseHeader().Get(serverTimingHeader))
+	}
+}
+
 func contextWithRequestID(t *testing.T, requestID string) context.Context {
 	t.Helper()
 

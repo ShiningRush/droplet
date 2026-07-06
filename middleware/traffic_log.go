@@ -183,7 +183,8 @@ func (mw *TrafficLogMiddleware) Handle(ctx core.Context) error {
 	}
 	now := time.Now()
 	respLog.Error = mw.BaseMiddleware.Handle(ctx)
-	respLog.ElapsedTime = time.Since(now).Nanoseconds() / 1000 / 1000 // ns to ms
+	respLog.ElapsedTime = time.Since(now).Milliseconds()
+	setAppServerTiming(ctx.ResponseHeader(), time.Duration(respLog.ElapsedTime)*time.Millisecond)
 
 	if mw.opt.LogResp {
 		respLog.Output = ctx.Output()
