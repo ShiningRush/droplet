@@ -34,7 +34,7 @@ type ResponseTrafficLog struct {
 	RequestID   string      `json:"request_id,omitempty"`
 	Path        string      `json:"path,omitempty"`
 	Method      string      `json:"method,omitempty"`
-	ElapsedTime int64       `json:"elapsed_time,omitempty"`
+	ElapsedTime int64       `json:"duration_ms,omitempty"`
 	Output      interface{} `json:"response,omitempty"`
 	Error       error       `json:"error,omitempty"`
 }
@@ -63,12 +63,10 @@ type defaultTrafficLogger struct {
 
 func (l *defaultTrafficLogger) LogRequest(tr *RequestTrafficLog) {
 	fields := []string{
-		"request_id",
 		"path",
 		"method",
 	}
 	values := []any{
-		tr.RequestID,
 		tr.Path,
 		tr.Method,
 	}
@@ -89,13 +87,11 @@ func (l *defaultTrafficLogger) LogRequest(tr *RequestTrafficLog) {
 
 func (l *defaultTrafficLogger) LogResponse(tr *ResponseTrafficLog) {
 	fields := []string{
-		"request_id",
 		"path",
 		"method",
-		"elapsed_time",
+		"duration_ms",
 	}
 	values := []any{
-		tr.RequestID,
 		tr.Path,
 		tr.Method,
 		tr.ElapsedTime,
@@ -126,15 +122,13 @@ func (l *defaultTrafficLogger) LogResponse(tr *ResponseTrafficLog) {
 func (l *defaultTrafficLogger) logFailedRequest(tr *ResponseTrafficLog) {
 	code := data.CodeOf(tr.Error)
 	fields := []string{
-		"request_id",
 		"path",
 		"method",
-		"elapsed_time",
+		"duration_ms",
 		"code",
 		"err",
 	}
 	values := []any{
-		tr.RequestID,
 		tr.Path,
 		tr.Method,
 		tr.ElapsedTime,

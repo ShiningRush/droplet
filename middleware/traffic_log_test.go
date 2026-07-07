@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -110,6 +111,30 @@ func TestTrafficLogMiddleware_Handle(t *testing.T) {
 	}
 }
 
+func TestDefaultTrafficLogger_LogRequestDoesNotDuplicateRequestID(t *testing.T) {
+	logger := &captureLogger{}
+	oldLogger := log.DefLogger
+	log.DefLogger = logger
+	defer func() {
+		log.DefLogger = oldLogger
+	}()
+
+	(&defaultTrafficLogger{}).LogRequest(&RequestTrafficLog{
+		Context:   contextWithRequestID(t, "req"),
+		RequestID: "req",
+		Path:      "/path",
+		Method:    http.MethodGet,
+	})
+
+	assert.Len(t, logger.entries, 1)
+	assert.Equal(t, "info", logger.entries[0].level)
+	assert.True(t, strings.HasPrefix(logger.entries[0].msg, "request start, "))
+	assert.NotContains(t, logger.entries[0].msg, "request_id")
+	for _, arg := range logger.entries[0].args {
+		assert.NotEqual(t, "req", arg)
+	}
+}
+
 func TestDefaultTrafficLogger_LogResponseLogsFailedRequestLevel(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -173,12 +198,30 @@ func TestDefaultTrafficLogger_LogResponseLogsFailedRequestLevel(t *testing.T) {
 			assert.Len(t, logger.entries, 2)
 			assert.Equal(t, tc.wantLevel, logger.entries[0].level)
 			assert.True(t, strings.HasPrefix(logger.entries[0].msg, "request failed, "))
+			assert.NotContains(t, logger.entries[0].msg, "request_id")
+			assert.Contains(t, logger.entries[0].msg, "duration_ms")
 			assert.Contains(t, logger.entries[0].args, tc.wantCode)
 			assert.Contains(t, logger.entries[0].args, tc.err)
 			assert.Equal(t, "info", logger.entries[1].level)
 			assert.True(t, strings.HasPrefix(logger.entries[1].msg, "request complete, "))
+			assert.NotContains(t, logger.entries[1].msg, "request_id")
+			assert.Contains(t, logger.entries[1].msg, "duration_ms")
+			for _, entry := range logger.entries {
+				for _, arg := range entry.args {
+					assert.NotEqual(t, "req", arg)
+				}
+			}
 		})
 	}
+}
+
+func TestResponseTrafficLogJSONUsesDurationMS(t *testing.T) {
+	bs, err := json.Marshal(&ResponseTrafficLog{
+		ElapsedTime: 10,
+	})
+	assert.NoError(t, err)
+	assert.Contains(t, string(bs), `"duration_ms":10`)
+	assert.NotContains(t, string(bs), `"elapsed_time"`)
 }
 
 func TestTrafficLogMiddlewareUsesElapsedTimeForServerTiming(t *testing.T) {

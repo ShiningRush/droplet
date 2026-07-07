@@ -12,45 +12,65 @@ import (
 
 func TestNewHttpInfoInjectorMiddleware(t *testing.T) {
 	tests := []struct {
-		giveOpt HttpInfoInjectorOption
-		giveCtx core.Context
+		name          string
+		header        http.Header
+		headerKey     string
+		wantRequestID string
 	}{
 		{
-			giveCtx: core.NewContext(),
-			giveOpt: HttpInfoInjectorOption{
-				HeaderKeyRequestID: "X-Request-Id",
-				ReqFunc: func() *http.Request {
-					return &http.Request{
-						URL: &url.URL{
-							Path: "path",
-						},
-						Header: http.Header{
-							"X-Request-Id": []string{"reqId"},
-						},
-					}
-				},
+			name:      "prefer OFA request id header",
+			headerKey: "X-Request-ID",
+			header: http.Header{
+				"OFA_DIRECT_REQUEST_ID": []string{"ofa-req-id"},
+				"X-Request-ID":          []string{"legacy-req-id"},
 			},
+			wantRequestID: "ofa-req-id",
+		},
+		{
+			name:      "fallback to configured header",
+			headerKey: "X-Request-Id",
+			header: http.Header{
+				"X-Request-Id": []string{"reqId"},
+			},
+			wantRequestID: "reqId",
 		},
 	}
 
 	for _, tc := range tests {
-		h := NewHttpInfoInjectorMiddleware(tc.giveOpt)
+		t.Run(tc.name, func(t *testing.T) {
+			header := http.Header{}
+			for key, values := range tc.header {
+				for _, value := range values {
+					header.Add(key, value)
+				}
+			}
+			req := &http.Request{
+				URL: &url.URL{
+					Path: "path",
+				},
+				Header: header,
+			}
+			h := NewHttpInfoInjectorMiddleware(HttpInfoInjectorOption{
+				HeaderKeyRequestID: tc.headerKey,
+				ReqFunc: func() *http.Request {
+					return req
+				},
+			})
 
-		nextCalled := false
-		mMw := &core.MockMiddleware{}
-		mMw.On("Handle", mock.Anything).Run(func(args mock.Arguments) {
-			nextCalled = true
-			ctx := args.Get(0).(core.Context)
-			req := ctx.Get(KeyHttpRequest)
-			assert.Equal(t, tc.giveOpt.ReqFunc(), req)
-			reqId := ctx.Get(KeyRequestID)
-			assert.Equal(t, tc.giveOpt.ReqFunc().Header.Get("X-Request-ID"), reqId)
-			assert.Equal(t, ctx.Path(), tc.giveOpt.ReqFunc().URL.Path)
-			assert.Equal(t, tc.giveCtx.Request(), ctx.Request())
-		}).Return(nil)
-		h.SetNext(mMw)
+			nextCalled := false
+			mMw := &core.MockMiddleware{}
+			mMw.On("Handle", mock.Anything).Run(func(args mock.Arguments) {
+				nextCalled = true
+				ctx := args.Get(0).(core.Context)
+				assert.Same(t, req, ctx.Get(KeyHttpRequest))
+				assert.Equal(t, tc.wantRequestID, ctx.Get(KeyRequestID))
+				assert.Equal(t, req.URL.Path, ctx.Path())
+				assert.Nil(t, ctx.Request())
+			}).Return(nil)
+			h.SetNext(mMw)
 
-		_ = h.Handle(tc.giveCtx)
-		assert.True(t, nextCalled)
+			_ = h.Handle(core.NewContext())
+			assert.True(t, nextCalled)
+		})
 	}
 }
