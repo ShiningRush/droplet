@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/shiningrush/droplet/core"
+	"github.com/shiningrush/droplet/middleware"
 )
 
 const (
@@ -16,7 +17,7 @@ const (
 
 func TestHandleHttpInPipelineSetsServerTimingHeader(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/v1/books", nil)
-	req.Header.Set("X-Request-ID", "req-1")
+	req.Header.Set(middleware.KeyRequestID, "req-1")
 	recorder := httptest.NewRecorder()
 
 	HandleHttpInPipeline(HandleHttpInPipelineInput{

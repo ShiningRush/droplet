@@ -22,6 +22,7 @@ type TrafficLogMiddleware struct {
 type RequestTrafficLog struct {
 	Context context.Context `json:"-"`
 
+	TraceID   string      `json:"trace_id,omitempty"`
 	RequestID string      `json:"request_id,omitempty"`
 	Path      string      `json:"path,omitempty"`
 	Method    string      `json:"method,omitempty"`
@@ -31,6 +32,7 @@ type RequestTrafficLog struct {
 type ResponseTrafficLog struct {
 	Context context.Context `json:"-"`
 
+	TraceID     string      `json:"trace_id,omitempty"`
 	RequestID   string      `json:"request_id,omitempty"`
 	Path        string      `json:"path,omitempty"`
 	Method      string      `json:"method,omitempty"`
@@ -58,7 +60,14 @@ type TrafficLogger interface {
 
 var defaultLogger TrafficLogger = &defaultTrafficLogger{}
 
+const missingTrafficLogFieldValue = "-"
+
 type defaultTrafficLogger struct {
+}
+
+func trafficLogContextString(ctx context.Context, key string) string {
+	value, _ := ctx.Value(key).(string)
+	return value
 }
 
 func (l *defaultTrafficLogger) LogRequest(tr *RequestTrafficLog) {
@@ -70,6 +79,19 @@ func (l *defaultTrafficLogger) LogRequest(tr *RequestTrafficLog) {
 		tr.Path,
 		tr.Method,
 	}
+	appendContextField := func(field string, key string) {
+		value := trafficLogContextString(tr.Context, key)
+		if value == "" {
+			value = missingTrafficLogFieldValue
+		}
+		fields = append(fields, field)
+		values = append(values, value)
+	}
+	appendContextField("operator", KeyOperator)
+	appendContextField("tenant_id", KeyTenantID)
+	appendContextField("app_id", KeyAppID)
+	appendContextField("locale", KeyLocale)
+	appendContextField("remaining_timeout_ms", KeyRemainingTimeoutMS)
 	if tr.Input != nil {
 		fields = append(fields, "input")
 		input, _ := json.Marshal(tr.Input)
@@ -160,6 +182,7 @@ func (mw *TrafficLogMiddleware) Handle(ctx core.Context) error {
 
 	reqLog := &RequestTrafficLog{
 		Context:   ctx.Context(),
+		TraceID:   ctx.GetString(KeyTraceID),
 		RequestID: ctx.GetString(KeyRequestID),
 		Path:      ctx.Path(),
 		Method:    ctx.Get(KeyHttpRequest).(*http.Request).Method,
@@ -171,6 +194,7 @@ func (mw *TrafficLogMiddleware) Handle(ctx core.Context) error {
 
 	respLog := &ResponseTrafficLog{
 		Context:   ctx.Context(),
+		TraceID:   ctx.GetString(KeyTraceID),
 		RequestID: ctx.GetString(KeyRequestID),
 		Path:      ctx.Path(),
 		Method:    ctx.Get(KeyHttpRequest).(*http.Request).Method,

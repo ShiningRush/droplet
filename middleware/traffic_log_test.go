@@ -32,12 +32,14 @@ func TestTrafficLogMiddleware_Handle(t *testing.T) {
 				LogResp: true,
 			},
 			wantReqLog: &RequestTrafficLog{
+				TraceID:   "trace",
 				RequestID: "req",
 				Path:      "path",
 				Method:    "method",
 				Input:     "req",
 			},
 			wantRespLog: &ResponseTrafficLog{
+				TraceID:   "trace",
 				RequestID: "req",
 				Path:      "path",
 				Method:    "method",
@@ -52,11 +54,13 @@ func TestTrafficLogMiddleware_Handle(t *testing.T) {
 				LogResp: false,
 			},
 			wantReqLog: &RequestTrafficLog{
+				TraceID:   "trace",
 				RequestID: "req",
 				Path:      "path",
 				Method:    "method",
 			},
 			wantRespLog: &ResponseTrafficLog{
+				TraceID:   "trace",
 				RequestID: "req",
 				Path:      "path",
 				Method:    "method",
@@ -86,7 +90,9 @@ func TestTrafficLogMiddleware_Handle(t *testing.T) {
 			c.Set(KeyHttpRequest, &http.Request{
 				Method: tc.wantReqLog.Method,
 			})
-			c.Set(KeyRequestID, tc.wantReqLog.RequestID)
+			c.Set(KeyTraceID, "trace")
+			c.Set(KeyRequestID, "req")
+			c.SetContext(contextWithRequestID(t, "trace", "req"))
 			c.SetInput(tc.wantReqLog.Input)
 			c.SetOutput(tc.wantRespLog.Output)
 			tc.wantReqLog.Context = c.Context()
@@ -111,7 +117,7 @@ func TestTrafficLogMiddleware_Handle(t *testing.T) {
 	}
 }
 
-func TestDefaultTrafficLogger_LogRequestDoesNotDuplicateRequestID(t *testing.T) {
+func TestDefaultTrafficLogger_LogRequestUsesContextFields(t *testing.T) {
 	logger := &captureLogger{}
 	oldLogger := log.DefLogger
 	log.DefLogger = logger
@@ -120,7 +126,8 @@ func TestDefaultTrafficLogger_LogRequestDoesNotDuplicateRequestID(t *testing.T) 
 	}()
 
 	(&defaultTrafficLogger{}).LogRequest(&RequestTrafficLog{
-		Context:   contextWithRequestID(t, "req"),
+		Context:   contextWithRequestFields(t),
+		TraceID:   "trace",
 		RequestID: "req",
 		Path:      "/path",
 		Method:    http.MethodGet,
@@ -129,10 +136,52 @@ func TestDefaultTrafficLogger_LogRequestDoesNotDuplicateRequestID(t *testing.T) 
 	assert.Len(t, logger.entries, 1)
 	assert.Equal(t, "info", logger.entries[0].level)
 	assert.True(t, strings.HasPrefix(logger.entries[0].msg, "request start, "))
+	assert.NotContains(t, logger.entries[0].msg, "trace_id")
 	assert.NotContains(t, logger.entries[0].msg, "request_id")
+	assert.NotContains(t, logger.entries[0].args, "trace")
+	assert.NotContains(t, logger.entries[0].args, "req")
+	assert.Contains(t, logger.entries[0].msg, "operator")
+	assert.Contains(t, logger.entries[0].msg, "tenant_id")
+	assert.Contains(t, logger.entries[0].msg, "app_id")
+	assert.Contains(t, logger.entries[0].msg, "locale")
+	assert.Contains(t, logger.entries[0].msg, "remaining_timeout_ms")
+	assert.Contains(t, logger.entries[0].args, "operator")
+	assert.Contains(t, logger.entries[0].args, "tenant")
+	assert.Contains(t, logger.entries[0].args, "app")
+	assert.Contains(t, logger.entries[0].args, "zh-CN")
+	assert.Contains(t, logger.entries[0].args, "1000")
+	assert.Equal(t, "trace", logger.entries[0].ctx.Value(KeyTraceID))
+	assert.Equal(t, "req", logger.entries[0].ctx.Value(KeyRequestID))
+}
+
+func TestDefaultTrafficLogger_LogRequestUsesPlaceholderForMissingContextFields(t *testing.T) {
+	logger := &captureLogger{}
+	oldLogger := log.DefLogger
+	log.DefLogger = logger
+	defer func() {
+		log.DefLogger = oldLogger
+	}()
+
+	(&defaultTrafficLogger{}).LogRequest(&RequestTrafficLog{
+		Context: contextWithRequestID(t, "trace", "req"),
+		Path:    "/path",
+		Method:  http.MethodGet,
+	})
+
+	assert.Len(t, logger.entries, 1)
+	assert.Contains(t, logger.entries[0].msg, "operator")
+	assert.Contains(t, logger.entries[0].msg, "tenant_id")
+	assert.Contains(t, logger.entries[0].msg, "app_id")
+	assert.Contains(t, logger.entries[0].msg, "locale")
+	assert.Contains(t, logger.entries[0].msg, "remaining_timeout_ms")
+
+	placeholderCount := 0
 	for _, arg := range logger.entries[0].args {
-		assert.NotEqual(t, "req", arg)
+		if arg == missingTrafficLogFieldValue {
+			placeholderCount++
+		}
 	}
+	assert.Equal(t, 5, placeholderCount)
 }
 
 func TestDefaultTrafficLogger_LogResponseLogsFailedRequestLevel(t *testing.T) {
@@ -187,7 +236,8 @@ func TestDefaultTrafficLogger_LogResponseLogsFailedRequestLevel(t *testing.T) {
 			}()
 
 			(&defaultTrafficLogger{}).LogResponse(&ResponseTrafficLog{
-				Context:     contextWithRequestID(t, "req"),
+				Context:     contextWithRequestID(t, "trace", "req"),
+				TraceID:     "trace",
 				RequestID:   "req",
 				Path:        "/path",
 				Method:      http.MethodGet,
@@ -198,19 +248,24 @@ func TestDefaultTrafficLogger_LogResponseLogsFailedRequestLevel(t *testing.T) {
 			assert.Len(t, logger.entries, 2)
 			assert.Equal(t, tc.wantLevel, logger.entries[0].level)
 			assert.True(t, strings.HasPrefix(logger.entries[0].msg, "request failed, "))
+			assert.NotContains(t, logger.entries[0].msg, "trace_id")
 			assert.NotContains(t, logger.entries[0].msg, "request_id")
 			assert.Contains(t, logger.entries[0].msg, "duration_ms")
+			assert.NotContains(t, logger.entries[0].args, "trace")
+			assert.NotContains(t, logger.entries[0].args, "req")
+			assert.Equal(t, "trace", logger.entries[0].ctx.Value(KeyTraceID))
+			assert.Equal(t, "req", logger.entries[0].ctx.Value(KeyRequestID))
 			assert.Contains(t, logger.entries[0].args, tc.wantCode)
 			assert.Contains(t, logger.entries[0].args, tc.err)
 			assert.Equal(t, "info", logger.entries[1].level)
 			assert.True(t, strings.HasPrefix(logger.entries[1].msg, "request complete, "))
+			assert.NotContains(t, logger.entries[1].msg, "trace_id")
 			assert.NotContains(t, logger.entries[1].msg, "request_id")
 			assert.Contains(t, logger.entries[1].msg, "duration_ms")
-			for _, entry := range logger.entries {
-				for _, arg := range entry.args {
-					assert.NotEqual(t, "req", arg)
-				}
-			}
+			assert.NotContains(t, logger.entries[1].args, "trace")
+			assert.NotContains(t, logger.entries[1].args, "req")
+			assert.Equal(t, "trace", logger.entries[1].ctx.Value(KeyTraceID))
+			assert.Equal(t, "req", logger.entries[1].ctx.Value(KeyRequestID))
 		})
 	}
 }
@@ -254,7 +309,9 @@ func TestTrafficLogMiddlewareUsesElapsedTimeForServerTiming(t *testing.T) {
 	c.Set(KeyHttpRequest, &http.Request{
 		Method: http.MethodGet,
 	})
+	c.Set(KeyTraceID, "trace")
 	c.Set(KeyRequestID, "req")
+	c.SetContext(contextWithRequestID(t, "trace", "req"))
 
 	err := testMw.Handle(c)
 	assert.NoError(t, err)
@@ -263,16 +320,30 @@ func TestTrafficLogMiddlewareUsesElapsedTimeForServerTiming(t *testing.T) {
 	}
 }
 
-func contextWithRequestID(t *testing.T, requestID string) context.Context {
+func contextWithRequestID(t *testing.T, traceID string, requestID string) context.Context {
 	t.Helper()
 
-	c := core.NewContext()
-	c.Set(KeyRequestID, requestID)
-	return c.Context()
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, KeyTraceID, traceID)
+	ctx = context.WithValue(ctx, KeyRequestID, requestID)
+	return ctx
+}
+
+func contextWithRequestFields(t *testing.T) context.Context {
+	t.Helper()
+
+	ctx := contextWithRequestID(t, "trace", "req")
+	ctx = context.WithValue(ctx, KeyOperator, "operator")
+	ctx = context.WithValue(ctx, KeyTenantID, "tenant")
+	ctx = context.WithValue(ctx, KeyAppID, "app")
+	ctx = context.WithValue(ctx, KeyLocale, "zh-CN")
+	ctx = context.WithValue(ctx, KeyRemainingTimeoutMS, "1000")
+	return ctx
 }
 
 type logEntry struct {
 	level string
+	ctx   context.Context
 	msg   string
 	args  []interface{}
 }
@@ -281,50 +352,51 @@ type captureLogger struct {
 	entries []logEntry
 }
 
-func (l *captureLogger) append(level string, msg string, args ...interface{}) {
+func (l *captureLogger) append(level string, ctx context.Context, msg string, args ...interface{}) {
 	l.entries = append(l.entries, logEntry{
 		level: level,
+		ctx:   ctx,
 		msg:   msg,
 		args:  args,
 	})
 }
 
 func (l *captureLogger) CtxDebugf(ctx context.Context, msg string, args ...interface{}) {
-	l.append("debug", msg, args...)
+	l.append("debug", ctx, msg, args...)
 }
 
 func (l *captureLogger) CtxInfof(ctx context.Context, msg string, args ...interface{}) {
-	l.append("info", msg, args...)
+	l.append("info", ctx, msg, args...)
 }
 
 func (l *captureLogger) CtxWarnf(ctx context.Context, msg string, args ...interface{}) {
-	l.append("warn", msg, args...)
+	l.append("warn", ctx, msg, args...)
 }
 
 func (l *captureLogger) CtxErrorf(ctx context.Context, msg string, args ...interface{}) {
-	l.append("error", msg, args...)
+	l.append("error", ctx, msg, args...)
 }
 
 func (l *captureLogger) CtxFatalf(ctx context.Context, msg string, args ...interface{}) {
-	l.append("fatal", msg, args...)
+	l.append("fatal", ctx, msg, args...)
 }
 
 func (l *captureLogger) Debugf(msg string, args ...interface{}) {
-	l.append("debug", msg, args...)
+	l.append("debug", nil, msg, args...)
 }
 
 func (l *captureLogger) Infof(msg string, args ...interface{}) {
-	l.append("info", msg, args...)
+	l.append("info", nil, msg, args...)
 }
 
 func (l *captureLogger) Warnf(msg string, args ...interface{}) {
-	l.append("warn", msg, args...)
+	l.append("warn", nil, msg, args...)
 }
 
 func (l *captureLogger) Errorf(msg string, args ...interface{}) {
-	l.append("error", msg, args...)
+	l.append("error", nil, msg, args...)
 }
 
 func (l *captureLogger) Fatalf(msg string, args ...interface{}) {
-	l.append("fatal", msg, args...)
+	l.append("fatal", nil, msg, args...)
 }

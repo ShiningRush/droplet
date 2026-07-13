@@ -17,6 +17,12 @@ func (mw *BaseMiddleware) Handle(ctx core.Context) error {
 }
 
 const (
-	KeyHttpRequest = "HttpRequest"
-	KeyRequestID   = "RequestID"
+	KeyHttpRequest        = "HttpRequest"
+	KeyTraceID            = "ofa-pass-trace-id"
+	KeyRequestID          = "ofa-direct-request-id"
+	KeyOperator           = "ofa-pass-operator"
+	KeyTenantID           = "ofa-pass-tenant-id"
+	KeyAppID              = "ofa-pass-app-id"
+	KeyLocale             = "ofa-pass-locale"
+	KeyRemainingTimeoutMS = "ofa-direct-remaining-timeout-ms"
 )
