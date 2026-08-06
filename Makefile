@@ -1,8 +1,8 @@
 WRAPPER_SUBMODULES := fasthttp gin gorestful
 PWD := $(shell pwd)
 DIR :=
-COMPAT_COREGO_TEST := $(PWD)/compat/corego/corego_compat_test.go
-CORE_GO_REF ?= master
+COMPAT_COREGO_TEST := $(PWD)/compat/corego/testdata/corego_compat_test.go
+CORE_GO_REF ?= main
 
 # must ensure your go version >= 1.16
 .PHONY: install

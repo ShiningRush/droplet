@@ -1,6 +1,6 @@
 module github.com/shiningrush/droplet/wrapper/gorestful
 
-go 1.24.3
+go 1.19
 
 require (
 	github.com/emicklei/go-restful/v3 v3.9.0
